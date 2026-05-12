@@ -14,6 +14,7 @@ header('Expires: 0');
 $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
 $host   = $_SERVER['HTTP_HOST'];
 $base   = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\');
+$base   = preg_replace('#[\\\\/]api$#', '', $base);
 if ($base === '/' || $base === '\\') { $base = ''; }
 
 $sessionId = $_GET['session'] ?? '';

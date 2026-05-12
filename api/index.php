@@ -35,6 +35,7 @@ $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' :
 $host   = $_SERVER['HTTP_HOST'];
 
 $base   = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\');
+$base   = preg_replace('#[\\\\/]api$#', '', $base);
 if ($base === '/' || $base === '\\') {
     $base = '';
 }

@@ -60,6 +60,7 @@ error_log('Session created: ' . $sessionId . ' (movies=' . count($selectedMovies
 $scheme   = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
 $host     = $_SERVER['HTTP_HOST'];
 $basePath = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\'); // folder where this file lives
+$basePath = preg_replace('#[\\\\/]api$#', '', $basePath);
 
 // Pretty URL instead of join.php?session=...
 $shareLink = $scheme . '://' . $host . $basePath . '/m/' . $sessionId . '/b';
@@ -94,8 +95,8 @@ foreach ($selectedMovies as $id) {
     <title>Your Invite Link</title>
 
     <!-- Load external CSS -->
-    <link rel="stylesheet" href="assets/global.css?v=3">
-    <link rel="stylesheet" href="assets/create-link.css?v=3">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($basePath . '/assets/global.css?v=3'); ?>">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($basePath . '/assets/create-link.css?v=3'); ?>">
 </head>
 <body>
 <div class="glass-card">
