@@ -1,5 +1,17 @@
-﻿{
-  "version": 2,
-  "builds": [{ "src": "Dockerfile", "use": "@vercel/docker" }],
-  "routes": [{ "src": "/(.*)", "dest": "/router.php" }]
+{
+  "functions": {
+    "api/router.php": {
+      "runtime": "vercel-php@0.7.1"
+    }
+  },
+  "routes": [
+    {
+      "src": "/assets/(.*)",
+      "dest": "/assets/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/api/router.php"
+    }
+  ]
 }
