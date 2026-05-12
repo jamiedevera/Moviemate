@@ -57,7 +57,7 @@ try {
 error_log('Session created: ' . $sessionId . ' (movies=' . count($selectedMovies) . ')');
 
 // 2️⃣ Build pretty link for your moviemate (they will be Person B)
-$scheme   = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+$scheme = (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') || (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
 $host     = $_SERVER['HTTP_HOST'];
 $basePath = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\'); // folder where this file lives
 $basePath = preg_replace('#[\\\\/]api$#', '', $basePath);

@@ -37,7 +37,7 @@ $stmt = $pdo->prepare('INSERT INTO sessions (id) VALUES (:id)');
 $stmt->execute(['id' => $sessionId]);
 
 // Build pretty URLs
-$scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+$scheme = (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') || (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
 $host   = $_SERVER['HTTP_HOST'];
 
 $base   = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\');
@@ -77,6 +77,14 @@ $chooseLinkA  = "{$scheme}://{$host}{$base}/m/{$sessionId}/a";    // A picks her
     <a class="cinematic-btn" style="margin-top:0;" href="<?php echo htmlspecialchars($chooseLinkA); ?>">Pick my movies 🎬</a>
 
     <small>They’ll open the invite link and later choose as Person B.</small>
+
+    <!-- Temporary Debug Info for Antigravity -->
+    <div style="display:none;" id="antigravity-debug">
+        <p>Base: <?php echo $base; ?></p>
+        <p>Scheme: <?php echo $scheme; ?></p>
+        <p>Host: <?php echo $host; ?></p>
+        <p>Script: <?php echo $_SERVER['SCRIPT_NAME']; ?></p>
+    </div>
 </div>
 
 <script>

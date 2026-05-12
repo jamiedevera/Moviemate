@@ -11,7 +11,7 @@ header('Pragma: no-cache');
 header('Expires: 0');
 
 // compute base path (works for subfolders)
-$scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+$scheme = (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') || (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
 $host   = $_SERVER['HTTP_HOST'];
 $base   = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\');
 $base   = preg_replace('#[\\\\/]api$#', '', $base);
