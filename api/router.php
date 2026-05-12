@@ -6,6 +6,9 @@ if (preg_match('/\.(?:png|jpg|jpeg|gif|css|js|woff|woff2|ttf|svg)$/', $_SERVER["
     return false;
 }
 
+header('Content-Type: text/html; charset=UTF-8');
+
+
 $path = parse_url($_SERVER["REQUEST_URI"], PHP_URL_PATH);
 
 // /m/<session>
