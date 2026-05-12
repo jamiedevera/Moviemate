@@ -13,7 +13,13 @@ function tmdb_get_movie($id) {
     $url = "https://api.themoviedb.org/3/movie/{$id}"
          . "?api_key={$apiKey}&language=en-US&append_to_response=credits";
 
-    $json = @file_get_contents($url);
+    $context = stream_context_create([
+        "ssl" => [
+            "verify_peer" => false,
+            "verify_peer_name" => false,
+        ],
+    ]);
+    $json = @file_get_contents($url, false, $context);
     if (!$json) return null;
 
     $data = json_decode($json, true);
@@ -84,7 +90,13 @@ function tmdb_get_recommendations($id, $limit = 10) {
     $url = "https://api.themoviedb.org/3/movie/{$id}/recommendations"
          . "?api_key={$apiKey}&language=en-US&page=1";
 
-    $json = @file_get_contents($url);
+    $context = stream_context_create([
+        "ssl" => [
+            "verify_peer" => false,
+            "verify_peer_name" => false,
+        ],
+    ]);
+    $json = @file_get_contents($url, false, $context);
     if (!$json) return [];
 
     $data = json_decode($json, true);

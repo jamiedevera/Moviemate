@@ -64,7 +64,13 @@ $popularEndpoint = 'https://api.themoviedb.org/3/movie/popular?api_key='
     . TMDB_API_KEY . '&language=en-US&page=1';
 
 $popularMovies = [];
-$response = @file_get_contents($popularEndpoint);
+$context = stream_context_create([
+    "ssl" => [
+        "verify_peer" => false,
+        "verify_peer_name" => false,
+    ],
+]);
+$response = @file_get_contents($popularEndpoint, false, $context);
 if ($response !== false) {
     $json = json_decode($response, true);
     if (!empty($json['results']) && is_array($json['results'])) {
@@ -82,8 +88,8 @@ if (empty($popularMovies)) {
 <head>
     <meta charset="UTF-8">
     <title>Select Movies</title>
-    <link rel="stylesheet" href="<?php echo htmlspecialchars($base . '/assets/global.css?v=' . time()); ?>">
-    <link rel="stylesheet" href="<?php echo htmlspecialchars($base . '/assets/choose.css?v=' . time()); ?>">
+    <link rel="stylesheet" href="/assets/global.css?v=<?php echo time(); ?>">
+    <link rel="stylesheet" href="/assets/choose.css?v=<?php echo time(); ?>">
 </head>
 <body>
 
@@ -142,6 +148,6 @@ if (empty($popularMovies)) {
         const GENRE_MAP      = <?php echo json_encode($TMDB_GENRES); ?>;
         // Validation handled by /assets/choose.js validateForm();
     </script>
-    <script src="<?php echo htmlspecialchars($base . '/assets/choose.js?v=' . time()); ?>"></script>
+    <script src="/assets/choose.js?v=<?php echo time(); ?>"></script>
 </body>
 </html>

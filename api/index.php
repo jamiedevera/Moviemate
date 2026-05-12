@@ -7,7 +7,13 @@ require_once __DIR__ . '/db.php';
 // Fetch 2026 best movies backdrops for the slideshow
 $backdrops = [];
 $tmdbUrl = 'https://api.themoviedb.org/3/discover/movie?api_key=' . TMDB_API_KEY . '&primary_release_year=2026&sort_by=popularity.desc';
-$response = @file_get_contents($tmdbUrl);
+$context = stream_context_create([
+    "ssl" => [
+        "verify_peer" => false,
+        "verify_peer_name" => false,
+    ],
+]);
+$response = @file_get_contents($tmdbUrl, false, $context);
 if ($response !== false) {
     $json = json_decode($response, true);
     if (!empty($json['results'])) {
