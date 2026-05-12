@@ -55,6 +55,12 @@ $chooseLinkA  = "{$scheme}://{$host}{$base}/m/{$sessionId}/a";    // A picks her
     <meta charset="UTF-8">
     <title>Create Your Movie Date Link</title>
     <link rel="stylesheet" href="/assets/global.css?v=3">
+    <style>
+        :root { --bg-dark: #0b0b0b; --text-light: #ffffff; --primary-red: #E50914; --font-main: 'Outfit', sans-serif; }
+        body { background-color: var(--bg-dark); color: var(--text-light); font-family: var(--font-main); background-image: radial-gradient(circle at 50% 0%, #200505 0%, var(--bg-dark) 60%); background-attachment: fixed; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        .glass-card { background: rgba(20, 20, 20, 0.75); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); padding: 40px 32px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1); text-align: center; max-width: 500px; width: 100%; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8); }
+        .cinematic-btn { background-color: var(--primary-red); color: white; padding: 16px 24px; border-radius: 8px; border: none; font-weight: 700; cursor: pointer; text-decoration: none; display: inline-block; width: 100%; text-transform: uppercase; letter-spacing: 1px; margin-top: 20px; }
+    </style>
 </head>
 <body>
 
