@@ -86,55 +86,88 @@ if (empty($popularMovies)) {
 </head>
 <body>
 
-<h1 id="pageTitle" class="page-title" style="text-align: center;">Select Your Movies <span>🎬</span> <br><small style="font-size: 1.2rem; margin-top: 10px; display: block; text-align: center; color: var(--text-light); opacity: 0.8;">(Pick up to 5)</small></h1>
+<div class="choice-container">
+    <div class="movie-explorer">
+        <h1 id="pageTitle" class="page-title">Select Your Movies <span>🎬</span></h1>
 
-<!-- SEARCH BAR (filters appear only when bar is focused) -->
-<div class="search-wrapper" id="searchWrapper">
-    <div class="search-bar">
-        <input type="text" id="movieSearch" class="input-box" style="margin-bottom: 0;" placeholder="Search any movie...">
 
-        <div class="search-filters" id="searchFilters">
-            <select id="filterGenre">
-                <option value="">Genre</option>
-                <?php foreach ($TMDB_GENRES as $gid => $gname): ?>
-                    <option value="<?php echo (int)$gid; ?>">
-                        <?php echo htmlspecialchars($gname); ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
+        <div class="search-wrapper" id="searchWrapper">
+            <div class="search-bar">
+                <input type="text" id="movieSearch" class="input-box" style="margin-bottom: 0;" placeholder="Search any movie...">
 
-            <input
-                type="number"
-                id="filterYear"
-                placeholder="Year"
-                min="1900"
-                max="<?php echo date('Y') + 1; ?>"
-            >
+                <div class="search-filters" id="searchFilters">
+                    <select id="filterGenre">
+                        <option value="">Genre</option>
+                        <?php foreach ($TMDB_GENRES as $gid => $gname): ?>
+                            <option value="<?php echo (int)$gid; ?>">
+                                <?php echo htmlspecialchars($gname); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
 
-            <button type="button" class="cinematic-btn" style="padding: 10px 20px; border-radius: 8px; width: auto;" id="applyFilterBtn">Go</button>
+                    <input
+                        type="number"
+                        id="filterYear"
+                        placeholder="Year"
+                        min="1900"
+                        max="<?php echo date('Y') + 1; ?>"
+                    >
+
+                    <button type="button" class="cinematic-btn" style="padding: 10px 20px; border-radius: 8px; width: auto;" id="applyFilterBtn">Go</button>
+                </div>
+            </div>
+
+            <div class="results" id="resultsBox"></div>
         </div>
+
+        <h2 class="section-heading">Most Popular Movies</h2>
+        <div class="grid" id="popularGrid"></div>
+        <div id="paginationControls" class="pagination"></div>
     </div>
 
-    <div class="results" id="resultsBox"></div>
-    <!-- Feedback message area for inline non-blocking messages -->
-    <div id="feedback" aria-live="polite" style="position:fixed;top:16px;right:16px;z-index:2000;display:none;padding:10px 14px;border-radius:8px;background:#111827;color:#f9fafb;box-shadow:0 8px 24px rgba(0,0,0,0.5);"></div>
+    <aside class="selection-sidebar" id="selectionSidebar" style="display: none;">
+        <div class="selection-tile" id="selectionTile">
+            <h3>Your Top 5 Picks</h3>
+            
+            <div class="progress-bar">
+                <div class="pill" id="pill-0"></div>
+                <div class="pill" id="pill-1"></div>
+                <div class="pill" id="pill-2"></div>
+                <div class="pill" id="pill-3"></div>
+                <div class="pill" id="pill-4"></div>
+            </div>
+
+
+            <div class="selected-list" id="selectedList">
+                <!-- Selected movies will be injected here -->
+                <div class="empty-state">No movies picked yet</div>
+            </div>
+
+            <form action="<?php echo htmlspecialchars($base . '/m/' . $sessionId . '/save'); ?>" method="post" id="movieForm" onsubmit="return handleFormSubmit(event)">
+                <input type="hidden" name="session" value="<?php echo htmlspecialchars($sessionId); ?>">
+                <input type="hidden" name="who" value="<?php echo htmlspecialchars($who); ?>">
+                <!-- Hidden inputs for movies will be added by JS -->
+                <div id="hiddenMovies"></div>
+                
+                <button type="submit" id="saveBtn" class="cinematic-btn submit-btn" disabled>Submit Picks</button>
+            </form>
+        </div>
+    </aside>
 </div>
 
-<form action="<?php echo htmlspecialchars($base . '/m/' . $sessionId . '/save'); ?>" method="post" id="movieForm" onsubmit="return validateForm()" style="width: 100%; max-width: 1400px; margin: 0 auto;">
-    <input type="hidden" name="session" value="<?php echo htmlspecialchars($sessionId); ?>">
-    <input type="hidden" name="who" value="<?php echo htmlspecialchars($who); ?>">
-
-    <div id="selectedContainer" style="display: none; margin-bottom: 40px; padding-bottom: 30px; border-bottom: 1px solid var(--border-light); text-align: center;">
-        <h2 id="selectedHeading" class="section-heading" style="text-align: center; margin-bottom: 20px;">Your Selected Movies (0/5)</h2>
-        <div class="selected-grid" id="selectedGrid"></div>
-        <button type="submit" id="saveBtn" class="cinematic-btn" style="max-width: 300px; margin-top: 30px; margin-left: auto; margin-right: auto; display: block;" disabled>Save Choices</button>
+<!-- Waiting State Overlay -->
+<div id="waitingOverlay" class="waiting-overlay" style="display: none;">
+    <div class="waiting-content">
+        <div class="pulse-indicator"></div>
+        <h2>Saving your picks...</h2>
+        <p id="waitingMessage">Waiting for your moviemate to finish...</p>
     </div>
+</div>
 
-    <h2 class="section-heading" style="text-align: center;">Most Popular Movies</h2>
-    <div class="grid" id="popularGrid"></div>
+<div id="feedback" aria-live="polite" style="position:fixed;top:16px;right:16px;z-index:2000;display:none;padding:10px 14px;border-radius:8px;background:#111827;color:#f9fafb;box-shadow:0 8px 24px rgba(0,0,0,0.5);"></div>
 
-    <div id="paginationControls" class="pagination"></div>
-</form>
+
+
 
     <script>
         const TMDB_KEY       = "<?php echo TMDB_API_KEY; ?>";

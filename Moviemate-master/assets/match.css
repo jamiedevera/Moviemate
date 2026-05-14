@@ -12,9 +12,20 @@
 }
 
 @keyframes pulse {
-    0% { transform: scale(1); text-shadow: 0 0 20px rgba(229, 9, 20, 0.4); }
-    50% { transform: scale(1.05); text-shadow: 0 0 40px rgba(229, 9, 20, 0.7); }
-    100% { transform: scale(1); text-shadow: 0 0 20px rgba(229, 9, 20, 0.4); }
+    0% {
+        transform: scale(1);
+        text-shadow: 0 0 20px rgba(229, 9, 20, 0.4);
+    }
+
+    50% {
+        transform: scale(1.05);
+        text-shadow: 0 0 40px rgba(229, 9, 20, 0.7);
+    }
+
+    100% {
+        transform: scale(1);
+        text-shadow: 0 0 20px rgba(229, 9, 20, 0.4);
+    }
 }
 
 .section-title {
@@ -74,11 +85,14 @@
 /* Grids for recommendations and choices */
 .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 30px 20px;
+    grid-template-columns: repeat(auto-fit, 200px);
+    justify-content: center;
+    gap: 40px 25px;
     margin-top: 20px;
     padding-bottom: 20px;
 }
+
+
 
 .movie-card {
     width: 100%;
@@ -89,8 +103,12 @@
     border-radius: 0;
     text-align: left;
     transition: transform 0.2s ease;
-    display: block; /* Removed flex */
+    display: block;
+    position: relative;
+    overflow: visible !important;
 }
+
+
 
 .movie-card:hover {
     transform: translateY(-4px);
@@ -146,7 +164,8 @@
     cursor: pointer;
     font-size: 0.95rem;
     transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-    box-shadow: 0 8px 20px rgba(229, 9, 20, 0.4);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+
     position: relative;
     overflow: hidden;
     width: 100%;
@@ -165,8 +184,10 @@
 }
 
 .action-pill:hover {
-    transform: translateY(-3px) scale(1.05);
-    box-shadow: 0 12px 28px rgba(229, 9, 20, 0.6);
+    transform: translateY(-3px);
+
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+
 }
 
 .action-pill:hover::before {
@@ -189,13 +210,25 @@
 }
 
 @keyframes iconBounce {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-3px); }
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-3px);
+    }
 }
 
 @keyframes iconSpin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 .action-pill span:last-child {
@@ -214,22 +247,28 @@
 
 .btn-skip {
     flex: 1;
-    padding: 10px 16px;
-    background: linear-gradient(135deg, var(--primary-red) 0%, #ff4b4b 100%);
+    padding: 14px 20px;
+    background: linear-gradient(135deg, #8b0000 0%, var(--primary-red) 100%);
     color: white;
     border: none;
-    border-radius: 6px;
-    font-weight: 600;
-    font-size: 0.85rem;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-    box-shadow: 0 4px 10px rgba(229, 9, 20, 0.3);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.1);
 }
 
 .btn-skip:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 16px rgba(229, 9, 20, 0.5);
+
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+    filter: brightness(1.1);
 }
+
+
 
 .btn-skip:active {
     transform: scale(0.96);
@@ -243,22 +282,28 @@
 
 .btn-seen {
     flex: 1;
-    padding: 10px 16px;
-    background: rgba(75, 85, 99, 0.5);
-    color: #e5fafb;
-    border: 1px solid #4b5563;
-    border-radius: 6px;
+    padding: 14px 20px;
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 999px;
     font-weight: 600;
-    font-size: 0.85rem;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: all 0.3s ease;
 }
 
 .btn-seen:hover {
-    background: rgba(75, 85, 99, 0.8);
-    border-color: var(--primary-red);
+    background: rgba(255, 255, 255, 0.15);
     color: #fff;
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-2px);
 }
+
 
 .btn-seen:active {
     transform: scale(0.96);
@@ -280,6 +325,7 @@
         opacity: 0;
         transform: translateY(10px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);

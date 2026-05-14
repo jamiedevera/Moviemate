@@ -357,15 +357,30 @@ if (!empty($recommendationPool)) {
 $initialRecs = array_slice($topNewRecommendations, 0, 4);
 $extraRecs   = array_slice($topNewRecommendations, 4);
 
+// If we are LOW on recommendations, fetch popular movies as fallback
+if (count($initialRecs) < 4) {
+    $fallback = tmdb_get_popular(1);
+    foreach ($fallback as $f) {
+        if (!in_array($f['id'], $allPickedIds)) {
+            if (count($initialRecs) < 4) {
+                $initialRecs[] = $f;
+            } else {
+                $extraRecs[] = $f;
+            }
+        }
+    }
+}
+
 // Prepare a slim version for JS
 $extraRecsForJs = array_map(function($m) {
     return [
-        'title'    => $m['title'] ?? '',
+        'title'    => $m['title'] ?? 'Untitled',
         'poster'   => $m['poster'] ?? '',
         'overview' => $m['overview'] ?? '',
     ];
 }, $extraRecs);
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -403,33 +418,45 @@ $extraRecsForJs = array_map(function($m) {
         </p>
         <div class="grid" id="recommendationGrid">
             <?php foreach ($initialRecs as $idx => $m): ?>
-                <div class="movie-card" data-card-index="<?php echo $idx; ?>">
+                <div class="movie-card" id="rec-card-<?php echo $idx; ?>">
                     <div class="poster-wrapper">
                         <img src="<?php echo htmlspecialchars($m['poster']); ?>" alt="Poster" class="rec-poster">
                     </div>
-                    <div class="movie-title" style="margin-top:6px;"><?php echo htmlspecialchars($m['title']); ?></div>
-                    <?php if (!empty($m['overview'])): ?>
-                        <div class="movie-overview" style="margin-top:6px; font-size:0.8rem; color:#9ca3af; max-height:4.2em; overflow:hidden;">
-                            <?php echo htmlspecialchars($m['overview']); ?>
-                        </div>
-                    <?php else: ?>
-                        <div class="movie-overview" style="margin-top:6px; font-size:0.8rem; color:#9ca3af; max-height:4.2em; overflow:hidden;"></div>
-                    <?php endif; ?>
-                    <!-- Dynamic Pill Button (on top) -->
-                    <button type="button" class="action-pill" style="margin-top: 8px; margin-bottom: 8px;">
-                        <span class="pill-icon">✕</span>
-                        <span>Skip</span>
-                    </button>
+                    <div class="movie-title" style="margin-top:10px; font-weight:700;"><?php echo htmlspecialchars($m['title']); ?></div>
+                    <div class="movie-overview" style="margin-top:6px; font-size:0.8rem; color:#9ca3af; max-height:4.2em; overflow:hidden;">
+                        <?php echo htmlspecialchars($m['overview'] ?? ''); ?>
+                    </div>
 
-                    <!-- Dual Action Buttons (below) -->
-                    <div class="button-group">
-                        <button type="button" class="btn-skip">Skip</button>
-                        <button type="button" class="btn-seen">Seen It</button>
+                    <div class="pill-actions" style="margin-top: 15px; display: flex; flex-direction: column; gap: 10px; overflow: visible;">
+                        <button type="button" class="action-pill btn-skip" onclick="handleAction(this, 'skip')">
+                            <span class="pill-icon">✕</span>
+                            <span>Skip</span>
+                        </button>
+                        <button type="button" class="action-pill btn-seen" onclick="handleAction(this, 'seen')">
+                            <span class="pill-icon">✓</span>
+                            <span>Seen It</span>
+                        </button>
                     </div>
                 </div>
             <?php endforeach; ?>
         </div>
-    <?php endif; ?>
+        
+        <!-- Empty State Container (Hidden by default) -->
+        <div id="emptyState" style="display: none; text-align: center; padding: 60px 20px; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px dashed rgba(255,255,255,0.1); margin: 20px 0;">
+            <div style="font-size: 3rem; margin-bottom: 20px;">🎬</div>
+            <h3 style="color: #fff; margin-bottom: 10px;">No recommendations available right now</h3>
+            <p style="color: #9ca3af; font-size: 0.9rem; margin-bottom: 25px;">Try updating your preferences or generating again.</p>
+            <a href="/" class="action-pill" style="display: inline-flex; width: auto; padding: 10px 25px; background: var(--primary-red); text-decoration: none;">Refresh Recommendations</a>
+        </div>
+<?php else: ?>
+    <!-- Initial Empty State -->
+    <div style="text-align: center; padding: 60px 20px;">
+        <h3 style="color: #fff;">No recommendations available right now</h3>
+        <p style="color: #9ca3af;">Try updating your preferences or generating again.</p>
+        <a href="/" class="cinematic-btn" style="display: inline-block; margin-top: 20px;">Generate Again</a>
+    </div>
+<?php endif; ?>
+
 
     <div class="section-title">Person A picked</div>
     <div class="grid">
@@ -455,7 +482,26 @@ $extraRecsForJs = array_map(function($m) {
         <?php endforeach; ?>
     </div>
 
-    <a href="/" onclick="return confirm('This will reset the current session and your saved picks — are you sure you want to try again?');" class="cinematic-btn" style="margin-top: 40px; text-align: center;">Try Again</a>
+    <!-- NEW: Your Seen History Section -->
+    <div id="watchedSection" style="display: none; margin-top: 50px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 30px;">
+        <div class="section-title">Your Seen History</div>
+        
+        <!-- Guest CTA -->
+        <div class="guest-cta" style="background: rgba(229, 9, 20, 0.1); border: 1px solid var(--primary-red); padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between;">
+            <div style="font-size: 0.9rem; color: #fff;">
+                <strong>Want to save these permanently?</strong><br>
+                Create an account to sync your history across all your devices.
+            </div>
+            <button class="action-pill" style="width: auto; padding: 8px 16px; font-size: 0.8rem; background: var(--primary-red);">Sign Up</button>
+        </div>
+
+        <div class="grid" id="watchedGrid">
+            <!-- Dynamically populated via JS -->
+        </div>
+    </div>
+
+
+    <a href="/" onclick="return confirm('This will reset the current session and your saved picks — are you sure you want to try again?');" class="cinematic-btn" style="margin-top: 60px; text-align: center;">Find More Movies</a>
 
 </div>
 
@@ -465,125 +511,97 @@ const extraRecommendations = <?php echo json_encode($extraRecsForJs, JSON_HEX_TA
 let extraIndex = 0;
 
 // Handle both Dynamic Pill and Dual Action buttons
-function handleCardSwap(card) {
+function handleAction(btn, type) {
+    const card = btn.closest('.movie-card');
     if (!card) return;
-
-    // Disable all buttons in this card
-    const allButtons = card.querySelectorAll('button');
-    allButtons.forEach(btn => btn.disabled = true);
-
-    // Fade out animation
-    card.style.transition = 'opacity 0.3s ease-out, transform 0.3s ease-out';
+    const movieData = {
+        title: card.querySelector('.movie-title').textContent,
+        poster: card.querySelector('.rec-poster').src
+    };
+    const btns = card.querySelectorAll('button');
+    btns.forEach(b => b.disabled = true);
+    card.style.transition = 'all 0.3s ease-out';
     card.style.opacity = '0';
     card.style.transform = 'translateY(-10px)';
-
-    // Wait for fade to complete, then swap content
     setTimeout(() => {
+        if (type === 'seen') { addToWatchedList(movieData); showSeenItFeedback(); }
         if (extraIndex < extraRecommendations.length) {
             const next = extraRecommendations[extraIndex++];
-            const img = card.querySelector('.rec-poster');
-            const titleEl = card.querySelector('.movie-title');
-            const overviewEl = card.querySelector('.movie-overview');
-
-            // Update all content
-            if (img && next.poster) {
-                img.style.transition = 'none';
-                img.src = next.poster;
-            }
-            if (titleEl) {
-                titleEl.textContent = next.title || '';
-            }
-            if (overviewEl) {
-                overviewEl.textContent = next.overview || '';
-            }
-
-            // Fade back in
+            card.querySelector('.rec-poster').src = next.poster;
+            card.querySelector('.movie-title').textContent = next.title;
+            card.querySelector('.movie-overview').textContent = next.overview;
             setTimeout(() => {
                 card.style.opacity = '1';
                 card.style.transform = 'translateY(0)';
-                allButtons.forEach(btn => btn.disabled = false);
+                btns.forEach(b => b.disabled = false);
             }, 50);
-        } else {
-            // No more recommendations, remove card with animation
-            card.style.transform = 'scale(0.95) translateY(-20px)';
-            setTimeout(() => {
-                card.remove();
-            }, 300);
+        } else { 
+            card.remove(); 
+            // Check if grid is empty
+            const remaining = grid.querySelectorAll('.movie-card');
+            if (remaining.length === 0) {
+                document.getElementById('emptyState').style.display = 'block';
+            }
         }
+
     }, 300);
 }
 
-// Dynamic Pill Button Handler
+
+// Interaction Handler
 document.addEventListener('click', (e) => {
-    if (e.target.closest('.action-pill')) {
-        const btn = e.target.closest('.action-pill');
-        const card = btn.closest('.movie-card');
-        handleCardSwap(card);
-    }
+    const btn = e.target.closest('.btn-skip, .btn-seen');
+    if (btn) handleAction(btn, btn.classList.contains('btn-skip') ? 'skip' : 'seen');
 });
 
-// Dual Action Buttons Handler
-document.addEventListener('click', (e) => {
-    // Skip button
-    if (e.target.closest('.btn-skip')) {
-        const btn = e.target.closest('.btn-skip');
-        const card = btn.closest('.movie-card');
-        handleCardSwap(card);
-    }
 
-    // Seen It button
-    if (e.target.closest('.btn-seen')) {
-        const btn = e.target.closest('.btn-seen');
-        const card = btn.closest('.movie-card');
-        
-        // You can add custom behavior here for "Seen It"
-        // For now, it does the same as Skip
-        handleCardSwap(card);
-        
-        // Optional: Show feedback message
-        showSeenItFeedback();
-    }
-});
+const watchedIds = new Set();
+
+function addToWatchedList(movie) {
+    const section = document.getElementById('watchedSection');
+    const grid = document.getElementById('watchedGrid');
+    if (!section || !grid) return;
+
+    // Prevent Duplicates
+    if (watchedIds.has(movie.title)) return;
+    watchedIds.add(movie.title);
+
+    section.style.display = 'block';
+    const newCard = document.createElement('div');
+    newCard.className = 'movie-card';
+    newCard.innerHTML = `
+        <div class="poster-wrapper"><img src="${movie.poster}"></div>
+        <div style="font-size:0.9rem; font-weight:700; color:white; margin-top:10px;">${movie.title}</div>
+        <div style="font-size:0.75rem; color:#9ca3af; margin-top:2px;">Seen Today</div>
+    `;
+    grid.appendChild(newCard);
+}
+
+
+
+
 
 // Optional: Show feedback when "Seen It" is clicked
 function showSeenItFeedback() {
     const feedback = document.createElement('div');
-    feedback.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: linear-gradient(135deg, var(--primary-red) 0%, #ff4b4b 100%);
-        color: white;
-        padding: 12px 16px;
-        border-radius: 8px;
-        z-index: 1000;
-        font-weight: 600;
-        box-shadow: 0 4px 12px rgba(229, 9, 20, 0.4);
-        animation: slideIn 0.3s ease-out;
-    `;
+    feedback.style.cssText = "position:fixed; top:20px; right:20px; background:linear-gradient(135deg, #e50914 0%, #ff4b4b 100%); color:white; padding:12px 16px; border-radius:8px; z-index:1000; font-weight:600; box-shadow:0 4px 12px rgba(229, 9, 20, 0.4); animation: slideIn 0.3s ease-out;";
     feedback.textContent = '✓ Marked as seen!';
     document.body.appendChild(feedback);
-    
     setTimeout(() => {
         feedback.style.animation = 'slideOut 0.3s ease-out';
-        setTimeout(() => feedback.remove(), 300);
+        setTimeout(() => { feedback.remove(); }, 300);
     }, 2000);
 }
 
-// Animation keyframes for feedback
 const style = document.createElement('style');
-style.textContent = \`
-    @keyframes slideIn {
-        from { transform: translateX(100%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-    }
-    @keyframes slideOut {
-        from { transform: translateX(0); opacity: 1; }
-        to { transform: translateX(100%); opacity: 0; }
-    }
-\`;
+style.textContent = `
+    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
+`;
 document.head.appendChild(style);
 </script>
+
+
 
 </body>
 </html>

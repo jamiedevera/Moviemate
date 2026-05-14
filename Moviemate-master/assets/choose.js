@@ -4,7 +4,12 @@ const searchWrapper = document.getElementById("searchWrapper");
 const searchInput   = document.getElementById("movieSearch");
 const resultsBox    = document.getElementById("resultsBox");
 const popularGrid   = document.getElementById("popularGrid");
-const selectedGrid  = document.getElementById("selectedGrid");
+const selectedList  = document.getElementById("selectedList");
+const selectionSidebar = document.getElementById("selectionSidebar");
+const hiddenMovies  = document.getElementById("hiddenMovies");
+
+const waitingOverlay = document.getElementById("waitingOverlay");
+
 
 const filterGenre   = document.getElementById("filterGenre");
 const filterYear    = document.getElementById("filterYear");
@@ -366,21 +371,23 @@ function renderMovies(movies) {
             <div class="card-meta">
                 <span class="card-year">${year}</span>
                 <div class="card-rating-container">
-                    <span class="card-icon" style="color: #888;">♥</span>
-                    <span class="card-icon" style="color: #888; margin: 0 6px;">👁</span>
                     <span class="card-star" style="color: #f5c518; margin-right: 2px;">★</span>
                     <span class="card-rating" style="color: #f5c518; font-weight: bold;">${rating}</span>
                 </div>
             </div>
             ${isSelected ? '<div class="selected-badge">✓</div>' : ''}
         `;
-        // card.onclick handled via event delegation below
+        // Pass year to addMovie
+        card.onclick = () => {
+            addMovie(id, title, poster, year);
+        };
 
         popularGrid.appendChild(card);
     });
 }
 
-function addMovie(id, title, poster) {
+function addMovie(id, title, poster, year) {
+
     id = Number(id); // normalize
     // Check if already selected by ID
     if (selectedMovies.find(m => Number(m.id) === id)) {
@@ -393,13 +400,13 @@ function addMovie(id, title, poster) {
         return;
     }
 
-    selectedMovies.push({ id, title, poster });
+
+    selectedMovies.push({ id, title, poster, year });
     updateSelectedGrid();
 
-    // Quick feedback to confirm the movie was added
-    showFeedback(`Added: ${title}`, 'info');
 
     // Update the visual state in the grid by matching dataset.movieId
+
     const card = popularGrid.querySelector(`[data-movie-id="${id}"]`);
     if (card) {
         card.classList.add('selected-movie');
@@ -412,16 +419,7 @@ function addMovie(id, title, poster) {
     }
 }
 
-// Event delegation fallback: clicking inside card triggers addMovie too
-popularGrid.addEventListener('click', (e) => {
-    const card = e.target.closest('.card');
-    if (!card || !card.dataset) return;
-    const mid = Number(card.dataset.movieId || 0);
-    const mtitle = card.dataset.movieTitle || '';
-    const mposter = card.dataset.moviePoster || '';
-    if (!mid) return; // ignore non-movie cards
-    addMovie(mid, mtitle, mposter);
-});
+
 
 function removeMovie(index) {
     const removedMovie = selectedMovies[index];
@@ -441,48 +439,130 @@ function removeMovie(index) {
 }
 
 function updateSelectedGrid() {
-    selectedGrid.innerHTML = "";
+    selectedList.innerHTML = "";
+    hiddenMovies.innerHTML = "";
+
+    if (selectedMovies.length === 0) {
+        selectedList.innerHTML = '<div class="empty-state">No movies picked yet</div>';
+    }
 
     selectedMovies.forEach((m, index) => {
-        const card = document.createElement("div");
-        card.className = "selected-card";
-        card.innerHTML = `
-            <div class="remove-btn" onclick="removeMovie(${index})">✕</div>
-            <div class="poster-wrapper">
-                <img src="${m.poster}">
+        const item = document.createElement("div");
+        item.className = "selected-item";
+        item.innerHTML = `
+            <img src="${m.poster}">
+            <div class="selected-item-info">
+                <div class="selected-item-title">${escapeHtml(m.title)}</div>
+                <div class="selected-item-year">${m.year || ''}</div>
             </div>
-            <div class="card-title">${escapeHtml(m.title)}</div>
-            <input type="hidden" name="movies[]" value="${m.id}">
+            <div class="remove-item-btn" onclick="removeMovie(${index})">✕</div>
         `;
-        selectedGrid.appendChild(card);
+        selectedList.appendChild(item);
+
+        // Add hidden input for form
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = "movies[]";
+        input.value = m.id;
+        hiddenMovies.appendChild(input);
     });
 
-    // Update the selected heading by ID (not first .section-heading)
-    const selectedHeading = document.getElementById('selectedHeading');
-    if (selectedHeading) {
-        selectedHeading.textContent = `Your Selected Movies (${selectedMovies.length}/5)`;
+    // Update Progress Pills
+    for (let i = 0; i < 5; i++) {
+        const pill = document.getElementById(`pill-${i}`);
+        if (pill) {
+            pill.classList.toggle('active', i < selectedMovies.length);
+        }
     }
 
-    // Also update page title counter
+    // Toggle Sidebar visibility
+    if (selectionSidebar) {
+        selectionSidebar.style.display = selectedMovies.length > 0 ? 'block' : 'none';
+    }
+
+    // Update Page Title / Heading logic if needed
     const pageTitle = document.getElementById('pageTitle');
     if (pageTitle) {
-        pageTitle.innerHTML = selectedMovies.length > 0
-            ? `Select Your Movies <span>🎬</span> <br><small style="font-size: 1.2rem; margin-top: 10px;">(${selectedMovies.length}/5 Selected)</small>`
-            : `Select Your Movies <span>🎬</span> <br><small style="font-size: 1.2rem; margin-top: 10px;">(Pick up to 5)</small>`;
+        pageTitle.innerHTML = `Select Your Movies <span>🎬</span>`;
     }
 
-    // Toggle visibility of the selected container
-    const selectedContainer = document.getElementById('selectedContainer');
-    if (selectedContainer) {
-        selectedContainer.style.display = selectedMovies.length > 0 ? 'block' : 'none';
-    }
 
-    // Enable only when exactly 5 movies selected (use id for better select)
-    const submitBtn = document.getElementById('saveBtn') || document.querySelector('.save-btn');
+    // Enable button only when exactly 5 movies selected
+    const submitBtn = document.getElementById('saveBtn');
     if (submitBtn) {
         submitBtn.disabled = !(selectedMovies.length === 5);
     }
 }
+
+// ===== AJAX FORM SUBMISSION & WAITING STATE =====
+async function handleFormSubmit(event) {
+    event.preventDefault();
+    
+    if (selectedMovies.length !== 5) {
+        showFeedback('Please select exactly 5 movies.', 'error');
+        return;
+    }
+
+
+    const form = event.target;
+    const formData = new FormData(form);
+
+    // Show waiting overlay
+    waitingOverlay.style.display = 'flex';
+    warnOnLeave = false; // Disable warning since we are submitting
+
+    try {
+        const response = await fetch(form.action + '?ajax=1', {
+            method: 'POST',
+            body: formData
+        });
+
+
+        if (response.ok) {
+            // After saving, poll for session status or redirect to save page to handle logic
+            // The user wants a waiting state "Waiting for [name] to finish..."
+            // We can stay on this page and poll session-status.php
+            startPollingStatus();
+        } else {
+            throw new Error('Save failed');
+        }
+    } catch (err) {
+        waitingOverlay.style.display = 'none';
+        showFeedback('Failed to save choices. Please try again.', 'error');
+        warnOnLeave = true;
+    }
+}
+
+let pollInterval = null;
+function startPollingStatus() {
+    // Extract session ID from path (e.g. /m/ed39b5918d3327c0/a)
+    const pathParts = window.location.pathname.split('/');
+    // The session ID is the part after '/m/'
+    const mIndex = pathParts.indexOf('m');
+    const sessionId = (mIndex !== -1 && pathParts[mIndex + 1]) ? pathParts[mIndex + 1] : null;
+    
+    if (!sessionId) {
+        console.error("Could not find session ID in URL path");
+        return;
+    }
+
+    pollInterval = setInterval(async () => {
+
+        try {
+            const res = await fetch(`/m/${sessionId}/status`);
+            const data = await res.json();
+            
+            if (data.bothDone) {
+                clearInterval(pollInterval);
+                window.location.href = `/m/${sessionId}/match`;
+            }
+
+        } catch (e) {
+            console.error("Polling error", e);
+        }
+    }, 3000);
+}
+
 
 // ===== FORM VALIDATION =====
 function validateForm() {

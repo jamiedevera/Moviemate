@@ -41,6 +41,8 @@ if (count($movies) !== 5) {
     displayError('Invalid selection count', 'You must select exactly 5 movies before saving. Please go back and pick 5 movies.');
 }
 
+
+
 // Verify session exists in database
 try {
     $checkStmt = $pdo->prepare('SELECT id, a_movies, b_movies FROM sessions WHERE id = :id');
@@ -80,6 +82,8 @@ if (count($movies) !== 5) {
     displayError('Invalid selection count', 'You must select exactly 5 unique movies before saving. Please go back and pick 5 movies.');
 }
 
+
+
 $json = json_encode($movies);
 
 // Update DB: set a_movies or b_movies
@@ -94,10 +98,18 @@ try {
     if (!$success) {
         displayError('Save failed', 'Failed to save your choices. Please try again.');
     }
+    
+    // If AJAX, return JSON and stop
+    if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest' || isset($_GET['ajax'])) {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true]);
+        exit;
+    }
 } catch (PDOException $e) {
     error_log('Database error saving choices: ' . $e->getMessage());
     displayError('Database error', 'Failed to save your choices. Please try again.');
 }
+
 
 // Check if both sides are done
 try {
@@ -233,7 +245,14 @@ if (!empty($row['a_movies']) && !empty($row['b_movies'])) {
 
 <?php
 function displayError($title, $message) {
+    if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest' || isset($_GET['ajax'])) {
+        header('Content-Type: application/json');
+        http_response_code(400);
+        echo json_encode(['error' => $message]);
+        exit;
+    }
     http_response_code(400);
+
     echo '<!DOCTYPE html>
     <html><head><meta charset="UTF-8"><title>' . htmlspecialchars($title) . '</title>
     <link rel="stylesheet" href="/assets/global.css?v=3">
