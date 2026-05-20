@@ -7,33 +7,53 @@ $env = file_exists($envPath) ? parse_ini_file($envPath) : [];
 $tmdbKey = '';
 if (isset($env['TMDB_KEY_B64'])) {
     $tmdbKey = base64_decode($env['TMDB_KEY_B64']);
+} elseif (isset($_ENV['TMDB_KEY_B64'])) {
+    $tmdbKey = base64_decode($_ENV['TMDB_KEY_B64']);
+} elseif (isset($_SERVER['TMDB_KEY_B64'])) {
+    $tmdbKey = base64_decode($_SERVER['TMDB_KEY_B64']);
 } elseif (getenv('TMDB_KEY_B64')) {
     $tmdbKey = base64_decode(getenv('TMDB_KEY_B64'));
+} elseif (isset($_ENV['TMDB_API_KEY'])) {
+    $tmdbKey = $_ENV['TMDB_API_KEY'];
+} elseif (isset($_SERVER['TMDB_API_KEY'])) {
+    $tmdbKey = $_SERVER['TMDB_API_KEY'];
 } elseif (getenv('TMDB_API_KEY')) {
     $tmdbKey = getenv('TMDB_API_KEY');
 }
 define('TMDB_API_KEY', $tmdbKey);
 
 // Read Database Host
-define('DB_HOST', $env['DB_HOST'] ?? getenv('DB_HOST') ?? '');
+define('DB_HOST', $env['DB_HOST'] ?? $_ENV['DB_HOST'] ?? $_SERVER['DB_HOST'] ?? getenv('DB_HOST') ?? '');
 
 // Read Database Port
-define('DB_PORT', $env['DB_PORT'] ?? getenv('DB_PORT') ?? '6543');
+define('DB_PORT', $env['DB_PORT'] ?? $_ENV['DB_PORT'] ?? $_SERVER['DB_PORT'] ?? getenv('DB_PORT') ?? '6543');
 
 // Read Database Name
-define('DB_NAME', $env['DB_NAME'] ?? getenv('DB_NAME') ?? '');
+define('DB_NAME', $env['DB_NAME'] ?? $_ENV['DB_NAME'] ?? $_SERVER['DB_NAME'] ?? getenv('DB_NAME') ?? '');
 
 // Read Database User
-define('DB_USER', $env['DB_USER'] ?? getenv('DB_USER') ?? '');
+define('DB_USER', $env['DB_USER'] ?? $_ENV['DB_USER'] ?? $_SERVER['DB_USER'] ?? getenv('DB_USER') ?? '');
 
 // Read Database Password (Support Base64 or Raw)
 $dbPass = '';
 if (isset($env['DB_PASS_B64'])) {
     $dbPass = base64_decode($env['DB_PASS_B64']);
+} elseif (isset($_ENV['DB_PASS_B64'])) {
+    $dbPass = base64_decode($_ENV['DB_PASS_B64']);
+} elseif (isset($_SERVER['DB_PASS_B64'])) {
+    $dbPass = base64_decode($_SERVER['DB_PASS_B64']);
 } elseif (getenv('DB_PASS_B64')) {
     $dbPass = base64_decode(getenv('DB_PASS_B64'));
+} elseif (isset($_ENV['DB_PASSWORD'])) {
+    $dbPass = $_ENV['DB_PASSWORD'];
+} elseif (isset($_SERVER['DB_PASSWORD'])) {
+    $dbPass = $_SERVER['DB_PASSWORD'];
 } elseif (getenv('DB_PASSWORD')) {
     $dbPass = getenv('DB_PASSWORD');
+} elseif (isset($_ENV['DB_PASS'])) {
+    $dbPass = $_ENV['DB_PASS'];
+} elseif (isset($_SERVER['DB_PASS'])) {
+    $dbPass = $_SERVER['DB_PASS'];
 } elseif (getenv('DB_PASS')) {
     $dbPass = getenv('DB_PASS');
 }
