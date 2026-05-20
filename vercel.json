@@ -1,17 +1,17 @@
 {
   "functions": {
-    "api/router.php": {
+    "api/**/*.php": {
       "runtime": "vercel-php@0.9.0"
     }
   },
-  "rewrites": [
+  "routes": [
     {
-      "source": "/assets/(.*)",
-      "destination": "/assets/$1"
+      "src": "/assets/(.*)",
+      "dest": "/assets/$1"
     },
     {
-      "source": "/(.*)",
-      "destination": "/api/router.php"
+      "src": "/(.*)",
+      "dest": "/api/router.php"
     }
   ]
 }
