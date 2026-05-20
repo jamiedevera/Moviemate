@@ -85,11 +85,12 @@
 /* Grids for recommendations and choices */
 .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, 200px);
-    justify-content: center;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    justify-content: stretch;
     gap: 40px 25px;
     margin-top: 20px;
     padding-bottom: 20px;
+    width: 100%;
 }
 
 
