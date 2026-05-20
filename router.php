@@ -31,6 +31,23 @@ if (file_exists(__DIR__ . $uri) && !is_dir(__DIR__ . $uri)) {
     }
 }
 
+// Temporary debug for CSS to see what path is being requested
+if (strpos($uri, '.css') !== false && $targetFile === null) {
+    header("Content-Type: text/plain");
+    echo "DEBUG: CSS file not found. URI: " . $uri . "\n";
+    echo "__DIR__: " . __DIR__ . "\n";
+    echo "Checked: " . __DIR__ . $uri . "\n";
+    echo "Files in __DIR__: \n";
+    echo implode("\n", scandir(__DIR__));
+    if (is_dir(__DIR__ . '/assets')) {
+        echo "\nFiles in __DIR__/assets: \n";
+        echo implode("\n", scandir(__DIR__ . '/assets'));
+    } else {
+        echo "\n__DIR__/assets DOES NOT EXIST!";
+    }
+    exit;
+}
+
 if ($targetFile !== null && preg_match('/\.(?:png|jpg|jpeg|gif|css|js|woff|woff2|ttf|svg)$/', $targetFile)) {
     $ext = pathinfo($targetFile, PATHINFO_EXTENSION);
     $mimeTypes = [
