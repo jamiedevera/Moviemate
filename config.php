@@ -1,5 +1,10 @@
 <?php
 // config.php
+
+// Disable displaying deprecation warnings and minor notices in production to prevent layout corruption
+error_reporting(E_ALL & ~E_DEPRECATED & ~E_NOTICE);
+ini_set('display_errors', 0);
+
 $envPath = __DIR__ . '/env.ini';
 $env = file_exists($envPath) ? parse_ini_file($envPath) : [];
 
@@ -109,7 +114,9 @@ function http_get_contents($url) {
             curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
             curl_setopt($ch, CURLOPT_TIMEOUT, 10);
             $result = curl_exec($ch);
-            curl_close($ch);
+            if (PHP_VERSION_ID < 80000) {
+                curl_close($ch);
+            }
             
             // Manual decompression fallback
             if ($result !== false && substr($result, 0, 2) === "\x1f\x8b") {
