@@ -23,16 +23,16 @@ if (isset($env['TMDB_KEY_B64'])) {
 define('TMDB_API_KEY', $tmdbKey);
 
 // Read Database Host
-define('DB_HOST', $env['DB_HOST'] ?? $_ENV['DB_HOST'] ?? $_SERVER['DB_HOST'] ?? getenv('DB_HOST') ?? '');
+define('DB_HOST', trim($env['DB_HOST'] ?? $_ENV['DB_HOST'] ?? $_SERVER['DB_HOST'] ?? getenv('DB_HOST') ?? ''));
 
 // Read Database Port
-define('DB_PORT', $env['DB_PORT'] ?? $_ENV['DB_PORT'] ?? $_SERVER['DB_PORT'] ?? getenv('DB_PORT') ?? '6543');
+define('DB_PORT', trim($env['DB_PORT'] ?? $_ENV['DB_PORT'] ?? $_SERVER['DB_PORT'] ?? getenv('DB_PORT') ?? '6543'));
 
 // Read Database Name
-define('DB_NAME', $env['DB_NAME'] ?? $_ENV['DB_NAME'] ?? $_SERVER['DB_NAME'] ?? getenv('DB_NAME') ?? '');
+define('DB_NAME', trim($env['DB_NAME'] ?? $_ENV['DB_NAME'] ?? $_SERVER['DB_NAME'] ?? getenv('DB_NAME') ?? ''));
 
 // Read Database User
-define('DB_USER', $env['DB_USER'] ?? $_ENV['DB_USER'] ?? $_SERVER['DB_USER'] ?? getenv('DB_USER') ?? $_ENV['DB_USERNAME'] ?? $_SERVER['DB_USERNAME'] ?? getenv('DB_USERNAME') ?? '');
+define('DB_USER', trim($env['DB_USER'] ?? $_ENV['DB_USER'] ?? $_SERVER['DB_USER'] ?? getenv('DB_USER') ?? $_ENV['DB_USERNAME'] ?? $_SERVER['DB_USERNAME'] ?? getenv('DB_USERNAME') ?? ''));
 
 // Read Database Password (Support Base64 or Raw)
 $dbPass = '';
@@ -57,7 +57,7 @@ if (isset($env['DB_PASS_B64'])) {
 } elseif (getenv('DB_PASS')) {
     $dbPass = getenv('DB_PASS');
 }
-define('DB_PASS', $dbPass);
+define('DB_PASS', trim($dbPass));
 
 // --- PRODUCTION SECURITY ENHANCEMENTS ---
 
