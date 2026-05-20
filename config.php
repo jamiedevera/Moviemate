@@ -103,21 +103,23 @@ if (!isset($_SESSION['rate_limit'])) {
 function http_get_contents($url) {
     if (function_exists('curl_init')) {
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-        $result = curl_exec($ch);
-        curl_close($ch);
-        
-        // Manual decompression fallback
-        if ($result !== false && substr($result, 0, 2) === "\x1f\x8b") {
-            $decompressed = @gzdecode($result);
-            if ($decompressed !== false) {
-                return $decompressed;
+        if ($ch !== false) {
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+            $result = curl_exec($ch);
+            curl_close($ch);
+            
+            // Manual decompression fallback
+            if ($result !== false && substr($result, 0, 2) === "\x1f\x8b") {
+                $decompressed = @gzdecode($result);
+                if ($decompressed !== false) {
+                    return $decompressed;
+                }
             }
+            return $result;
         }
-        return $result;
     }
     
     // Fallback using file_get_contents with context to disable SSL verify
