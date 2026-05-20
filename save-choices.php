@@ -22,9 +22,13 @@ if (!$sessionId || !preg_match('/^[a-f0-9]{16}$/', $sessionId)) {
     displayError('Invalid session ID', 'The session ID is invalid. Please go back and try again.');
 }
 
-// CSRF Validation
+// CSRF Validation (checks PHP session or uses unguessable session signature for stateless serverless environments)
 $csrfToken = $_POST['csrf_token'] ?? '';
-if (empty($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $csrfToken)) {
+$expectedToken = $_SESSION['csrf_token'] ?? '';
+$secret = defined('DB_PASS') ? DB_PASS : 'moviemate_secret';
+$statelessToken = hash_hmac('sha256', $sessionId . '_csrf', $secret);
+
+if ((empty($expectedToken) || !hash_equals($expectedToken, $csrfToken)) && !hash_equals($statelessToken, $csrfToken)) {
     displayError('Invalid Request', 'Security token mismatch (CSRF). Please refresh the page and try again.');
 }
 

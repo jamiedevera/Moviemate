@@ -20,12 +20,7 @@ let selectedMovies = [];
 // Track whether we should warn the user about leaving and losing picks
 let warnOnLeave = true;
 
-// Initialize history state so we can catch back navigation with popstate
-try {
-    history.pushState(null, null, window.location.href);
-} catch (e) {
-    // ignore if pushState isn't available
-}
+// History state will be initialized on the first movie selection
 
 // Feedback UI: show a non-blocking message for a short period
 const feedbackEl = document.getElementById('feedback');
@@ -54,7 +49,9 @@ window.addEventListener('beforeunload', function (e) {
 // Handle Back navigation (popstate) with a confirm dialog only when needed
 window.addEventListener('popstate', function (ev) {
     if (!warnOnLeave || selectedMovies.length === 0) {
-        // allow normal navigation if nothing to lose
+        // If nothing to lose, navigate to the homepage immediately
+        const base = typeof BASE_PATH !== 'undefined' ? BASE_PATH : '';
+        window.location.replace(base ? base : '/');
         return;
     }
 
@@ -65,7 +62,8 @@ window.addEventListener('popstate', function (ev) {
         () => {
             // Confirm: go home and clear selection
             warnOnLeave = false;
-            window.location.replace('/');
+            const base = typeof BASE_PATH !== 'undefined' ? BASE_PATH : '';
+            window.location.replace(base ? base : '/');
         },
         () => {
             // Cancel: keep user on the page; push state to restore history entry
@@ -402,6 +400,12 @@ function addMovie(id, title, poster, year) {
         return;
     }
 
+    // If this is the first movie added, push history state to handle future back navigation clicks
+    if (selectedMovies.length === 0) {
+        try {
+            history.pushState(null, null, window.location.href);
+        } catch (e) {}
+    }
 
     selectedMovies.push({ id, title, poster, year });
     updateSelectedGrid();

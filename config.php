@@ -149,4 +149,18 @@ function http_get_contents($url) {
     return $result;
 }
 
+// Helper to generate and retrieve CSRF tokens (supports session and stateless fallback)
+function get_csrf_token($sessionId = '') {
+    if (!empty($_SESSION['csrf_token'])) {
+        return $_SESSION['csrf_token'];
+    }
+    $secret = defined('DB_PASS') ? DB_PASS : 'moviemate_secret';
+    if ($sessionId) {
+        return hash_hmac('sha256', $sessionId . '_csrf', $secret);
+    }
+    $ip = $_SERVER['REMOTE_ADDR'] ?? '';
+    $ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
+    return hash_hmac('sha256', $ip . '|' . $ua, $secret);
+}
+
 

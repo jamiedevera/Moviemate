@@ -10,10 +10,16 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-// CSRF Protection
+// CSRF Protection (checks PHP session or uses stateless signature fallback for serverless container switches)
 $cKey = 'csrf' . '_' . 'token';
 $csrfToken = $_POST[$cKey] ?? '';
-if (empty($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $csrfToken)) {
+$expectedToken = $_SESSION['csrf_token'] ?? '';
+$secret = defined('DB_PASS') ? DB_PASS : 'moviemate_secret';
+$ip = $_SERVER['REMOTE_ADDR'] ?? '';
+$ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
+$statelessToken = hash_hmac('sha256', $ip . '|' . $ua, $secret);
+
+if ((empty($expectedToken) || !hash_equals($expectedToken, $csrfToken)) && !hash_equals($statelessToken, $csrfToken)) {
     http_response_code(403);
     echo json_encode(['success' => false, 'error' => 'Invalid security token']);
     exit;

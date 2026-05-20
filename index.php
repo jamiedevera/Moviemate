@@ -4,24 +4,14 @@
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/db.php';
 
-// Fetch 2026 best movies backdrops for the slideshow
-$backdrops = [];
-$tmdbUrl = 'https://api.themoviedb.org/3/discover/movie?api_key=' . TMDB_API_KEY . '&primary_release_year=2026&sort_by=popularity.desc';
-$response = http_get_contents($tmdbUrl);
-if ($response !== false) {
-    $json = json_decode($response, true);
-    if (!empty($json['results'])) {
-        foreach (array_slice($json['results'], 0, 10) as $movie) {
-            if (!empty($movie['backdrop_path'])) {
-                $backdrops[] = 'https://image.tmdb.org/t/p/original' . $movie['backdrop_path'];
-            }
-        }
-    }
-}
-// Fallback if API fails
-if (empty($backdrops)) {
-    $backdrops = ['https://image.tmdb.org/t/p/original/mRGmNnh6pBAGGp6fMBMwI8iTBUO.jpg'];
-}
+// High-quality static backdrops for instant loading of the slideshow background
+$backdrops = [
+    'https://image.tmdb.org/t/p/original/mRGmNnh6pBAGGp6fMBMwI8iTBUO.jpg', // Inside Out 2
+    'https://image.tmdb.org/t/p/original/36551C7464Vm1msoZ5K2nahwG49.jpg', // Deadpool & Wolverine
+    'https://image.tmdb.org/t/p/original/xl1w94548gZXIvXtZah65EVz76q.jpg',  // Dune: Part Two
+    'https://image.tmdb.org/t/p/original/5gKK2j31V6il6okrQ47GgS6J24r.jpg',  // Moana 2
+    'https://image.tmdb.org/t/p/original/zfb52MI415Xe2328lhIEvNc2Vky.jpg'   // Gladiator II
+];
 
 // Demo/Mock session links for onboarding preview (does not write to DB)
 $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
@@ -84,7 +74,7 @@ $chooseLinkA  = "{$scheme}://{$host}{$base}/start-session.php";   // Triggers ac
         <h2 id="authTitle" style="margin-bottom: 30px; font-weight: 800;">Log In</h2>
         
         <form id="authForm" onsubmit="submitAuth(event)">
-            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token'] ?? ''); ?>">
+            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(get_csrf_token()); ?>">
             <input type="hidden" id="authAction" name="action" value="login">
             
             <div class="underline-input-group" id="usernameGroup" style="display:none;">

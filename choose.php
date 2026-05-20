@@ -67,23 +67,7 @@ try {
     die('A database error occurred. Please try again later.');
 }
 
-// ---- Load popular movies (page 1) on the server ----
-$popularEndpoint = 'https://api.themoviedb.org/3/movie/popular?api_key='
-    . TMDB_API_KEY . '&language=en-US&page=1';
-
-$popularMovies = [];
-$response = http_get_contents($popularEndpoint);
-if ($response !== false) {
-    $json = json_decode($response, true);
-    if (!empty($json['results']) && is_array($json['results'])) {
-        $popularMovies = $json['results'];
-    }
-}
-
-// Check if TMDb API is working
-if (empty($popularMovies)) {
-    die('Unable to load movies from TMDb. Please try again later.');
-}
+// Server-side fetch removed to ensure instant page load. Client-side choose.js loads movies asynchronously.
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -168,7 +152,7 @@ if (empty($popularMovies)) {
             </div>
 
             <form action="<?php echo htmlspecialchars($base . '/m/' . $sessionId . '/save'); ?>" method="post" id="movieForm" onsubmit="return handleFormSubmit(event)">
-                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(get_csrf_token($sessionId)); ?>">
                 <input type="hidden" name="session" value="<?php echo htmlspecialchars($sessionId); ?>">
                 <input type="hidden" name="who" value="<?php echo htmlspecialchars($who); ?>">
                 <!-- Hidden inputs for movies will be added by JS -->
