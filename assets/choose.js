@@ -530,11 +530,18 @@ async function handleFormSubmit(event) {
             // We can stay on this page and poll session-status.php
             startPollingStatus();
         } else {
-            throw new Error('Save failed');
+            let serverMsg = 'Failed to save choices. Please try again.';
+            try {
+                const errData = await response.json();
+                if (errData && errData.error) {
+                    serverMsg = errData.error;
+                }
+            } catch (e) { }
+            throw new Error(serverMsg);
         }
     } catch (err) {
         waitingOverlay.style.display = 'none';
-        showFeedback('Failed to save choices. Please try again.', 'error');
+        showFeedback(err.message || 'Failed to save choices. Please try again.', 'error');
         warnOnLeave = true;
     }
 }
