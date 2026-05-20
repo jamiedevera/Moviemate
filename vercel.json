@@ -1,13 +1,12 @@
 {
   "functions": {
     "api/**/*.php": {
-      "runtime": "vercel-php@0.9.0",
-      "includeFiles": "{assets/**,includes/**,*.php,*.pem,*.ini}"
+      "runtime": "vercel-php@0.9.0"
     }
   },
   "routes": [
     {
-      "src": "/(.*)",
+      "src": "^/(?!assets/)(.*)$",
       "dest": "/api/router.php"
     }
   ]
