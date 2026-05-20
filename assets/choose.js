@@ -552,6 +552,14 @@ function startPollingStatus() {
         return;
     }
 
+    // Change message after 15 seconds of waiting
+    setTimeout(() => {
+        const msgEl = document.getElementById('waitingMessage');
+        if (msgEl) {
+            msgEl.innerHTML = "Still waiting? Make sure your partner has opened their link and finished picking!<br><br><a href='/' style='color:#ef4444; font-weight:bold; text-decoration:underline;'>Or Start a New Session</a>";
+        }
+    }, 15000);
+
     pollInterval = setInterval(async () => {
 
         try {

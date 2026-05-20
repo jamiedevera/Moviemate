@@ -3,6 +3,12 @@
 
 // Custom static file handler to serve assets from the project folder under any document root
 $uri = parse_url($_SERVER["REQUEST_URI"], PHP_URL_PATH);
+
+// Override DOCUMENT_ROOT on Vercel to ensure base path calculations resolve to empty string
+if (getenv('VERCEL') === '1' || isset($_SERVER['VERCEL'])) {
+    $_SERVER['DOCUMENT_ROOT'] = __DIR__;
+}
+
 $base = '';
 if (isset($_SERVER['DOCUMENT_ROOT'])) {
     $docRoot = str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT']);

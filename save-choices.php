@@ -167,9 +167,17 @@ if (!empty($row['a_movies']) && !empty($row['b_movies'])) {
 <div class="glass-card">
       <h2 style="font-size: 2rem; margin-bottom: 16px;">Your picks are saved <span style="color:var(--primary-red);">✅</span></h2>
       <p>You selected <strong><?php echo count($movies); ?></strong> movie<?php echo count($movies) !== 1 ? 's' : ''; ?>.</p>
-      <p>We're waiting for the other person to finish choosing their movies.</p>
+      <p id="waitingText">We're waiting for the other person to finish choosing their movies.</p>
       <small class="small-text">You can safely close this tab now. When both of you are done, you'll be able to see your results.</small>
   </div>
+  <script>
+    setTimeout(() => {
+        const waitingText = document.getElementById('waitingText');
+        if (waitingText) {
+            waitingText.innerHTML = "Still waiting? Make sure your partner has opened their link and finished picking!<br><br><a href='/' style='color:#ef4444; font-weight:bold; text-decoration:underline;'>Or Start a New Session</a>";
+        }
+    }, 15000);
+  </script>
 </body>
 </html>
 

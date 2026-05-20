@@ -5,6 +5,11 @@
 error_reporting(E_ALL & ~E_DEPRECATED & ~E_NOTICE);
 ini_set('display_errors', 0);
 
+// Override DOCUMENT_ROOT on Vercel to ensure base path calculations resolve to empty string
+if (getenv('VERCEL') === '1' || isset($_SERVER['VERCEL'])) {
+    $_SERVER['DOCUMENT_ROOT'] = __DIR__;
+}
+
 $envPath = __DIR__ . '/env.ini';
 $env = file_exists($envPath) ? parse_ini_file($envPath) : [];
 
