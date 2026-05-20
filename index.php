@@ -36,7 +36,7 @@ $chooseLinkA  = "{$scheme}://{$host}{$base}/start-session.php";   // Triggers ac
 <head>
     <meta charset="UTF-8">
     <title>Create Your Movie Date Link</title>
-    <link rel="stylesheet" href="<?php echo htmlspecialchars($base); ?>/assets/global.css?v=<?php echo time(); ?>">
+    <link rel="stylesheet" href="/assets/global.css">
     <script>
         if (localStorage.getItem('moviemate_visited')) {
             document.documentElement.classList.add('returning-user');

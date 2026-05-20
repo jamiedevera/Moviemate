@@ -161,7 +161,7 @@ if (!empty($row['a_movies']) && !empty($row['b_movies'])) {
 <head>
     <meta charset="UTF-8">
     <title>Saved!</title>
-    <link rel="stylesheet" href="<?php echo htmlspecialchars($base); ?>/assets/global.css?v=3">
+    <link rel="stylesheet" href="/assets/global.css">
 </head>
 <body>
 <div class="glass-card">
@@ -297,7 +297,7 @@ function displayError($title, $message) {
 
     echo '<!DOCTYPE html>
     <html><head><meta charset="UTF-8"><title>' . htmlspecialchars($title) . '</title>
-    <link rel="stylesheet" href="' . htmlspecialchars($base) . '/assets/global.css?v=3">
+    <link rel="stylesheet" href="/assets/global.css">
     </head>
     <body>
       <div class="glass-card" style="border-color: var(--primary-red);">

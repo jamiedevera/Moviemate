@@ -57,7 +57,7 @@ if (!empty($session['b_movies'])) {
 <head>
     <meta charset="UTF-8">
     <title>Join Movie Date</title>
-    <link rel="stylesheet" href="<?php echo htmlspecialchars($base); ?>/assets/global.css?v=3">
+    <link rel="stylesheet" href="/assets/global.css">
 </head>
 <body>
 <div class="glass-card">

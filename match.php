@@ -398,8 +398,8 @@ $extraRecsForJs = array_map(function($m) {
 <head>
     <meta charset="UTF-8">
     <title>Your Movie Match</title>
-    <link rel="stylesheet" href="<?php echo htmlspecialchars($base); ?>/assets/global.css?v=<?php echo time(); ?>">
-    <link rel="stylesheet" href="<?php echo htmlspecialchars($base); ?>/assets/match.css?v=<?php echo time(); ?>">
+    <link rel="stylesheet" href="/assets/global.css">
+    <link rel="stylesheet" href="/assets/match.css">
 </head>
 <body>
 <div class="glass-card" style="max-width: 1400px; width: 100%;">

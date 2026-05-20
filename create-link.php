@@ -94,8 +94,8 @@ foreach ($selectedMovies as $id) {
     <title>Your Invite Link</title>
 
     <!-- Load external CSS -->
-    <link rel="stylesheet" href="assets/global.css?v=3">
-    <link rel="stylesheet" href="assets/create-link.css?v=3">
+    <link rel="stylesheet" href="/assets/global.css">
+    <link rel="stylesheet" href="/assets/create-link.css">
 </head>
 <body>
 <div class="glass-card">

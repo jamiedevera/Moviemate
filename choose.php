@@ -74,8 +74,8 @@ try {
 <head>
     <meta charset="UTF-8">
     <title>Select Movies</title>
-    <link rel="stylesheet" href="<?php echo htmlspecialchars($base . '/assets/global.css?v=' . time()); ?>">
-    <link rel="stylesheet" href="<?php echo htmlspecialchars($base . '/assets/choose.css?v=' . time()); ?>">
+    <link rel="stylesheet" href="/assets/global.css">
+    <link rel="stylesheet" href="/assets/choose.css">
 </head>
 <body>
 
