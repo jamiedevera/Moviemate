@@ -3,12 +3,41 @@
 $envPath = __DIR__ . '/env.ini';
 $env = file_exists($envPath) ? parse_ini_file($envPath) : [];
 
-define('TMDB_API_KEY', isset($env['TMDB_KEY_B64']) ? base64_decode($env['TMDB_KEY_B64']) : '');
-define('DB_HOST', $env['DB_HOST'] ?? '');
-define('DB_PORT', $env['DB_PORT'] ?? '');
-define('DB_NAME', $env['DB_NAME'] ?? '');
-define('DB_USER', $env['DB_USER'] ?? '');
-define('DB_PASS', isset($env['DB_PASS_B64']) ? base64_decode($env['DB_PASS_B64']) : '');
+// Read TMDB API Key (Support Base64 or Raw)
+$tmdbKey = '';
+if (isset($env['TMDB_KEY_B64'])) {
+    $tmdbKey = base64_decode($env['TMDB_KEY_B64']);
+} elseif (getenv('TMDB_KEY_B64')) {
+    $tmdbKey = base64_decode(getenv('TMDB_KEY_B64'));
+} elseif (getenv('TMDB_API_KEY')) {
+    $tmdbKey = getenv('TMDB_API_KEY');
+}
+define('TMDB_API_KEY', $tmdbKey);
+
+// Read Database Host
+define('DB_HOST', $env['DB_HOST'] ?? getenv('DB_HOST') ?? '');
+
+// Read Database Port
+define('DB_PORT', $env['DB_PORT'] ?? getenv('DB_PORT') ?? '6543');
+
+// Read Database Name
+define('DB_NAME', $env['DB_NAME'] ?? getenv('DB_NAME') ?? '');
+
+// Read Database User
+define('DB_USER', $env['DB_USER'] ?? getenv('DB_USER') ?? '');
+
+// Read Database Password (Support Base64 or Raw)
+$dbPass = '';
+if (isset($env['DB_PASS_B64'])) {
+    $dbPass = base64_decode($env['DB_PASS_B64']);
+} elseif (getenv('DB_PASS_B64')) {
+    $dbPass = base64_decode(getenv('DB_PASS_B64'));
+} elseif (getenv('DB_PASSWORD')) {
+    $dbPass = getenv('DB_PASSWORD');
+} elseif (getenv('DB_PASS')) {
+    $dbPass = getenv('DB_PASS');
+}
+define('DB_PASS', $dbPass);
 
 // --- PRODUCTION SECURITY ENHANCEMENTS ---
 
