@@ -22,6 +22,12 @@ if (!$sessionId || !preg_match('/^[a-f0-9]{16}$/', $sessionId)) {
     displayError('Invalid session ID', 'The session ID is invalid. Please go back and try again.');
 }
 
+// CSRF Validation
+$csrfToken = $_POST['csrf_token'] ?? '';
+if (empty($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $csrfToken)) {
+    displayError('Invalid Request', 'Security token mismatch (CSRF). Please refresh the page and try again.');
+}
+
 // Check who parameter
 if (!in_array($who, ['A','B'], true)) {
     displayError('Invalid user type', 'Invalid user type detected. Please use the correct link.');
@@ -121,9 +127,21 @@ try {
         displayError('Session error', 'Session not found after saving.');
     }
 
+$base = '';
+if (isset($_SERVER['DOCUMENT_ROOT'])) {
+    $docRoot = str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT']);
+    $dir = str_replace('\\', '/', __DIR__);
+    $docRootLower = strtolower($docRoot);
+    $dirLower = strtolower($dir);
+    if (strpos($dirLower, $docRootLower) === 0) {
+        $base = substr($dir, strlen($docRoot));
+    }
+}
+$base = rtrim($base, '/\\');
+
 if (!empty($row['a_movies']) && !empty($row['b_movies'])) {
-    // Both done → pretty URL handled by .htaccess
-    header('Location: /m/' . urlencode($sessionId) . '/match');
+    // Both done → pretty URL handled by .htaccess / router.php
+    header('Location: ' . $base . '/m/' . urlencode($sessionId) . '/match');
     exit;
 }
 
@@ -139,7 +157,7 @@ if (!empty($row['a_movies']) && !empty($row['b_movies'])) {
 <head>
     <meta charset="UTF-8">
     <title>Saved!</title>
-    <link rel="stylesheet" href="/assets/global.css?v=3">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($base); ?>/assets/global.css?v=3">
 </head>
 <body>
 <div class="glass-card">
@@ -253,17 +271,29 @@ function displayError($title, $message) {
     }
     http_response_code(400);
 
+    $base = '';
+    if (isset($_SERVER['DOCUMENT_ROOT'])) {
+        $docRoot = str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT']);
+        $dir = str_replace('\\', '/', __DIR__);
+        $docRootLower = strtolower($docRoot);
+        $dirLower = strtolower($dir);
+        if (strpos($dirLower, $docRootLower) === 0) {
+            $base = substr($dir, strlen($docRoot));
+        }
+    }
+    $base = rtrim($base, '/\\');
+
     echo '<!DOCTYPE html>
     <html><head><meta charset="UTF-8"><title>' . htmlspecialchars($title) . '</title>
-    <link rel="stylesheet" href="/assets/global.css?v=3">
+    <link rel="stylesheet" href="' . htmlspecialchars($base) . '/assets/global.css?v=3">
     </head>
     <body>
       <div class="glass-card" style="border-color: var(--primary-red);">
           <h2 style="color: var(--primary-red); font-size: 2rem; margin-bottom: 16px;">' . htmlspecialchars($title) . ' ❌</h2>
           <p>' . htmlspecialchars($message) . '</p>
           <div style="margin-top: 24px; display: flex; flex-direction: column; gap: 12px;">
-              <a href="/" onclick="return confirm(\'If you go home, your picks will be lost and the current session will be reset. Continue?\');" class="cinematic-btn">Go Home</a>
-              <a href="/" onclick="return confirm(\'If you go home, your picks will be lost and the current session will be reset. Continue?\');" class="cinematic-btn" style="background-color: #333;">Start Over</a>
+              <a href="' . htmlspecialchars($base) . '/" onclick="return confirm(\'If you go home, your picks will be lost and the current session will be reset. Continue?\');" class="cinematic-btn">Go Home</a>
+              <a href="' . htmlspecialchars($base) . '/" onclick="return confirm(\'If you go home, your picks will be lost and the current session will be reset. Continue?\');" class="cinematic-btn" style="background-color: #333;">Start Over</a>
           </div>
       </div>
     </body></html>';

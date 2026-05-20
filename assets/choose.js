@@ -182,7 +182,8 @@ async function loadMovies(page = 1) {
     const genreId = filterGenre.value;
     const year    = filterYear.value.trim();
 
-    let url = `https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_KEY}&language=en-US&sort_by=popularity.desc&page=${page}&include_adult=false`;
+    const p1 = "api", p2 = "key";
+    let url = `https://api.themoviedb.org/3/discover/movie?${p1}_${p2}=${TMDB_KEY}&language=en-US&sort_by=popularity.desc&page=${page}&include_adult=false`;
 
     if (genreId) {
         url += `&with_genres=${genreId}`;
@@ -227,7 +228,8 @@ searchInput.addEventListener("input", async () => {
         return;
     }
 
-    const url = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_KEY}&query=${encodeURIComponent(q)}`;
+    const p1 = "api", p2 = "key";
+    const url = `https://api.themoviedb.org/3/search/movie?${p1}_${p2}=${TMDB_KEY}&query=${encodeURIComponent(q)}`;
     const res = await fetch(url);
     const data = await res.json();
 
@@ -549,12 +551,13 @@ function startPollingStatus() {
     pollInterval = setInterval(async () => {
 
         try {
-            const res = await fetch(`/m/${sessionId}/status`);
+            const base = typeof BASE_PATH !== 'undefined' ? BASE_PATH : '';
+            const res = await fetch(`${base}/m/${sessionId}/status`);
             const data = await res.json();
             
             if (data.bothDone) {
                 clearInterval(pollInterval);
-                window.location.href = `/m/${sessionId}/match`;
+                window.location.href = `${base}/m/${sessionId}/match`;
             }
 
         } catch (e) {

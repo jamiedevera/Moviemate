@@ -13,8 +13,17 @@ header('Expires: 0');
 // compute base path (works for subfolders)
 $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
 $host   = $_SERVER['HTTP_HOST'];
-$base   = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\');
-if ($base === '/' || $base === '\\') { $base = ''; }
+$base = '';
+if (isset($_SERVER['DOCUMENT_ROOT'])) {
+    $docRoot = str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT']);
+    $dir = str_replace('\\', '/', __DIR__);
+    $docRootLower = strtolower($docRoot);
+    $dirLower = strtolower($dir);
+    if (strpos($dirLower, $docRootLower) === 0) {
+        $base = substr($dir, strlen($docRoot));
+    }
+}
+$base = rtrim($base, '/\\');
 
 $sessionId = $_GET['session'] ?? '';
 $who       = $_GET['who'] ?? ''; // 'A' or 'B'
@@ -47,9 +56,9 @@ try {
         // If both sides completed, go to results; otherwise show the waiting page
         $bothDone = !empty($session['a_movies']) && !empty($session['b_movies']);
         if ($bothDone) {
-            header('Location: /m/' . $sessionId . '/match');
+            header('Location: ' . $base . '/m/' . $sessionId . '/match');
         } else {
-            header('Location: /m/' . $sessionId . '/save');
+            header('Location: ' . $base . '/m/' . $sessionId . '/save');
         }
         exit;
     }
@@ -63,7 +72,7 @@ $popularEndpoint = 'https://api.themoviedb.org/3/movie/popular?api_key='
     . TMDB_API_KEY . '&language=en-US&page=1';
 
 $popularMovies = [];
-$response = @file_get_contents($popularEndpoint);
+$response = http_get_contents($popularEndpoint);
 if ($response !== false) {
     $json = json_decode($response, true);
     if (!empty($json['results']) && is_array($json['results'])) {
@@ -89,6 +98,21 @@ if (empty($popularMovies)) {
 <div class="choice-container">
     <div class="movie-explorer">
         <h1 id="pageTitle" class="page-title">Select Your Movies <span>🎬</span></h1>
+
+        <?php if ($who === 'A'): ?>
+            <div class="invite-banner">
+                <div class="invite-content">
+                    <span class="invite-icon">🔗</span>
+                    <div class="invite-text">
+                        <strong>Invite your partner:</strong> Share this link with them to match movies!
+                    </div>
+                </div>
+                <div class="invite-action">
+                    <input type="text" readonly value="<?php echo htmlspecialchars("{$scheme}://{$host}{$base}/m/{$sessionId}"); ?>" id="partnerLinkInput" class="invite-input">
+                    <button onclick="copyPartnerLink()" id="copyPartnerBtn" class="cinematic-btn copy-btn" style="padding: 10px 18px; border-radius: 8px; font-size: 0.9rem; font-weight: 700; width: auto; margin-top: 0;">Copy Link</button>
+                </div>
+            </div>
+        <?php endif; ?>
 
 
         <div class="search-wrapper" id="searchWrapper">
@@ -144,6 +168,7 @@ if (empty($popularMovies)) {
             </div>
 
             <form action="<?php echo htmlspecialchars($base . '/m/' . $sessionId . '/save'); ?>" method="post" id="movieForm" onsubmit="return handleFormSubmit(event)">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
                 <input type="hidden" name="session" value="<?php echo htmlspecialchars($sessionId); ?>">
                 <input type="hidden" name="who" value="<?php echo htmlspecialchars($who); ?>">
                 <!-- Hidden inputs for movies will be added by JS -->
@@ -172,7 +197,30 @@ if (empty($popularMovies)) {
     <script>
         const TMDB_KEY       = "<?php echo TMDB_API_KEY; ?>";
         const GENRE_MAP      = <?php echo json_encode($TMDB_GENRES); ?>;
-        // Validation handled by /assets/choose.js validateForm();
+        const BASE_PATH      = "<?php echo htmlspecialchars($base); ?>";
+        
+        function copyPartnerLink() {
+            const input = document.getElementById('partnerLinkInput');
+            if (!input) return;
+            input.select();
+            input.setSelectionRange(0, 99999);
+            
+            navigator.clipboard.writeText(input.value).then(() => {
+                const btn = document.getElementById('copyPartnerBtn');
+                const originalText = btn.innerText;
+                btn.innerText = 'Copied! ✓';
+                btn.style.background = '#22c55e';
+                btn.style.borderColor = '#22c55e';
+                setTimeout(() => {
+                    btn.innerText = originalText;
+                    btn.style.background = '';
+                    btn.style.borderColor = '';
+                }, 2000);
+            }).catch(err => {
+                document.execCommand('copy');
+                alert('Link copied! Send it to your partner 💛');
+            });
+        }
     </script>
     <script src="<?php echo htmlspecialchars($base . '/assets/choose.js?v=' . time()); ?>"></script>
 </body>

@@ -24,13 +24,25 @@ try {
         die('Session not found');
     }
 
+$base = '';
+if (isset($_SERVER['DOCUMENT_ROOT'])) {
+    $docRoot = str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT']);
+    $dir = str_replace('\\', '/', __DIR__);
+    $docRootLower = strtolower($docRoot);
+    $dirLower = strtolower($dir);
+    if (strpos($dirLower, $docRootLower) === 0) {
+        $base = substr($dir, strlen($docRoot));
+    }
+}
+$base = rtrim($base, '/\\');
+
 if (!empty($session['b_movies'])) {
     $bothDone = !empty($session['b_movies']) && !empty($session['a_movies']);
     if ($bothDone) {
-        header('Location: /m/' . $sessionId . '/match');
+        header('Location: ' . $base . '/m/' . $sessionId . '/match');
     } else {
         // or just send them back to the join page
-        header('Location: /m/' . $sessionId);
+        header('Location: ' . $base . '/m/' . $sessionId);
     }
     exit;
 }
@@ -45,13 +57,13 @@ if (!empty($session['b_movies'])) {
 <head>
     <meta charset="UTF-8">
     <title>Join Movie Date</title>
-    <link rel="stylesheet" href="/assets/global.css?v=3">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($base); ?>/assets/global.css?v=3">
 </head>
 <body>
 <div class="glass-card">
     <h1>Hey moviemate <span>🍿</span></h1>
     <p>Someone sent you a movie date link. Click below to choose your movies as <strong>Person B</strong>.</p>
-    <a class="cinematic-btn" href="/m/<?php echo htmlspecialchars($sessionId); ?>/b">
+    <a class="cinematic-btn" href="<?php echo htmlspecialchars($base); ?>/m/<?php echo htmlspecialchars($sessionId); ?>/b">
         Choose my movies 🎬
     </a>
 </div>

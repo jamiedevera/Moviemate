@@ -11,6 +11,18 @@ header('Cache-Control: post-check=0, pre-check=0', false);
 header('Pragma: no-cache');
 header('Expires: 0');
 
+$base = '';
+if (isset($_SERVER['DOCUMENT_ROOT'])) {
+    $docRoot = str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT']);
+    $dir = str_replace('\\', '/', __DIR__);
+    $docRootLower = strtolower($docRoot);
+    $dirLower = strtolower($dir);
+    if (strpos($dirLower, $docRootLower) === 0) {
+        $base = substr($dir, strlen($docRoot));
+    }
+}
+$base = rtrim($base, '/\\');
+
 // ------------ Read session & load from DB ------------
 $sessionId = $_GET['session'] ?? '';
 
@@ -42,13 +54,13 @@ if (empty($aMoviesJson) || empty($bMoviesJson)) {
       <div style="background:#1f2937;padding:24px;border-radius:16px;max-width:480px;text-align:center;">
           <h2>Not Ready Yet ⏳</h2>
           <p>Both people need to finish choosing their movies before viewing the results.</p>
-          <p><a href="/" onclick="return confirm(\'This will reset the current session and your saved picks — are you sure you want to start a new session?\');" style="color:#f59e0b;">Start a new session</a></p>
+          <p><a href="' . htmlspecialchars($base) . '/" onclick="return confirm(\'This will reset the current session and your saved picks — are you sure you want to start a new session?\');" style="color:#f59e0b;">Start a new session</a></p>
       </div>
     </body></html>
     <script>
     (function(){
         const session = "' . htmlspecialchars($sessionId) . '";
-        const statusUrl = "/m/" + session + "/status";
+        const statusUrl = "' . htmlspecialchars($base) . '/m/" + session + "/status";
         const pollInterval = 3000;
         let timer;
         function poll() {
@@ -56,7 +68,7 @@ if (empty($aMoviesJson) || empty($bMoviesJson)) {
             .then(r => r.ok ? r.json() : Promise.reject("status " + r.status))
             .then(data => {
                 if (data && data.bothDone) {
-                    window.location.replace("/m/" + session + "/match");
+                    window.location.replace("' . htmlspecialchars($base) . '/m/" + session + "/match");
                 }
             }).catch(e => { console.error("status check failed", e); });
         }
@@ -92,14 +104,15 @@ if (empty($aMovies) || empty($bMovies)) {
 $personA = [];
 $personB = [];
 
+$allIds = array_unique(array_merge($aMovies, $bMovies));
+$allMovies = tmdb_get_movies_parallel($allIds);
+
 foreach ($aMovies as $id) {
-    $details = tmdb_get_movie($id);
-    if ($details) $personA[] = $details;
+    if (isset($allMovies[$id])) $personA[] = $allMovies[$id];
 }
 
 foreach ($bMovies as $id) {
-    $details = tmdb_get_movie($id);
-    if ($details) $personB[] = $details;
+    if (isset($allMovies[$id])) $personB[] = $allMovies[$id];
 }
 
 if (empty($personA) || empty($personB)) {
@@ -305,9 +318,8 @@ $seedIds = array_unique(array_merge($seedA, $seedB));
 
 $recommendationPool = []; // id => ['movie' => ..., 'count' => float]
 
-foreach ($seedIds as $seedId) {
-    $recs = tmdb_get_recommendations($seedId, 8); // each rec is a full movie now
-
+$allRecs = tmdb_get_recommendations_parallel($seedIds, 8);
+foreach ($allRecs as $seedId => $recs) {
     foreach ($recs as $rec) {
         $id = $rec['id'];
 
@@ -386,8 +398,8 @@ $extraRecsForJs = array_map(function($m) {
 <head>
     <meta charset="UTF-8">
     <title>Your Movie Match</title>
-    <link rel="stylesheet" href="/assets/global.css?v=<?php echo time(); ?>">
-    <link rel="stylesheet" href="/assets/match.css?v=<?php echo time(); ?>">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($base); ?>/assets/global.css?v=<?php echo time(); ?>">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($base); ?>/assets/match.css?v=<?php echo time(); ?>">
 </head>
 <body>
 <div class="glass-card" style="max-width: 1400px; width: 100%;">
@@ -446,14 +458,14 @@ $extraRecsForJs = array_map(function($m) {
             <div style="font-size: 3rem; margin-bottom: 20px;">🎬</div>
             <h3 style="color: #fff; margin-bottom: 10px;">No recommendations available right now</h3>
             <p style="color: #9ca3af; font-size: 0.9rem; margin-bottom: 25px;">Try updating your preferences or generating again.</p>
-            <a href="/" class="action-pill" style="display: inline-flex; width: auto; padding: 10px 25px; background: var(--primary-red); text-decoration: none;">Refresh Recommendations</a>
+            <a href="<?php echo htmlspecialchars($base); ?>/" class="action-pill" style="display: inline-flex; width: auto; padding: 10px 25px; background: var(--primary-red); text-decoration: none;">Refresh Recommendations</a>
         </div>
 <?php else: ?>
     <!-- Initial Empty State -->
     <div style="text-align: center; padding: 60px 20px;">
         <h3 style="color: #fff;">No recommendations available right now</h3>
         <p style="color: #9ca3af;">Try updating your preferences or generating again.</p>
-        <a href="/" class="cinematic-btn" style="display: inline-block; margin-top: 20px;">Generate Again</a>
+        <a href="<?php echo htmlspecialchars($base); ?>/" class="cinematic-btn" style="display: inline-block; margin-top: 20px;">Generate Again</a>
     </div>
 <?php endif; ?>
 
@@ -501,7 +513,7 @@ $extraRecsForJs = array_map(function($m) {
     </div>
 
 
-    <a href="/" onclick="return confirm('This will reset the current session and your saved picks — are you sure you want to try again?');" class="cinematic-btn" style="margin-top: 60px; text-align: center;">Find More Movies</a>
+    <a href="<?php echo htmlspecialchars($base); ?>/" onclick="return confirm('This will reset the current session and your saved picks — are you sure you want to try again?');" class="cinematic-btn" style="margin-top: 60px; text-align: center;">Find More Movies</a>
 
 </div>
 

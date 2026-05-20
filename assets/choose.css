@@ -529,6 +529,69 @@
     animation: shimmer 1.5s infinite linear;
 }
 
+/* Invite Banner */
+.invite-banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(15, 15, 15, 0.7);
+    border: 1px solid var(--border-light);
+    border-radius: 16px;
+    padding: 16px 24px;
+    margin: 0 auto 30px auto;
+    max-width: 800px;
+    width: 100%;
+    box-sizing: border-box;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    gap: 20px;
+}
+
+.invite-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--text-light);
+    font-size: 0.95rem;
+}
+
+.invite-icon {
+    font-size: 1.3rem;
+}
+
+.invite-action {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    max-width: 480px;
+    justify-content: flex-end;
+}
+
+.invite-input {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.85rem;
+    font-family: inherit;
+    width: 100%;
+    outline: none;
+}
+
+@media (max-width: 768px) {
+    .invite-banner {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 20px;
+        gap: 16px;
+    }
+    .invite-action {
+        max-width: 100%;
+    }
+}
+
 @keyframes shimmer {
     0% { background-position: -200% 0; }
     100% { background-position: 200% 0; }
