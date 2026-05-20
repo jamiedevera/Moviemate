@@ -22,11 +22,15 @@ if (isset($_SERVER['DOCUMENT_ROOT'])) {
 $base = rtrim($base, '/\\');
 
 $targetFile = null;
-if (file_exists(__DIR__ . $uri) && !is_dir(__DIR__ . $uri)) {
+if (file_exists(__DIR__ . '/public' . $uri) && !is_dir(__DIR__ . '/public' . $uri)) {
+    $targetFile = __DIR__ . '/public' . $uri;
+} elseif (file_exists(__DIR__ . $uri) && !is_dir(__DIR__ . $uri)) {
     $targetFile = __DIR__ . $uri;
 } elseif ($base !== '' && strpos($uri, $base) === 0) {
     $strippedUri = substr($uri, strlen($base));
-    if (file_exists(__DIR__ . $strippedUri) && !is_dir(__DIR__ . $strippedUri)) {
+    if (file_exists(__DIR__ . '/public' . $strippedUri) && !is_dir(__DIR__ . '/public' . $strippedUri)) {
+        $targetFile = __DIR__ . '/public' . $strippedUri;
+    } elseif (file_exists(__DIR__ . $strippedUri) && !is_dir(__DIR__ . $strippedUri)) {
         $targetFile = __DIR__ . $strippedUri;
     }
 }
