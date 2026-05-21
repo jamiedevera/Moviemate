@@ -392,6 +392,38 @@ document.addEventListener("DOMContentLoaded", () => {
         currentIdx = (currentIdx + 1) % slides.length;
         slides[currentIdx].style.opacity = '0.3';
     }, 5000); // Change image every 5 seconds
+    
+    // Intersection Observer for Motion-Driven animations
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: "0px 0px -50px 0px"
+    };
+    
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry, index) => {
+            if (entry.isIntersecting) {
+                // Add staggered animation delay
+                entry.target.style.animationDelay = `${index * 0.1}s`;
+                entry.target.classList.add('visible');
+                observer.unobserve(entry.target);
+            }
+        });
+    }, observerOptions);
+    
+    document.querySelectorAll('.genre-pill').forEach(el => {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(20px)';
+        el.style.transition = 'opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)';
+        observer.observe(el);
+    });
+    
+    // Helper to trigger CSS transition on intersection
+    document.addEventListener('scroll', () => {
+        document.querySelectorAll('.genre-pill.visible').forEach(el => {
+            el.style.opacity = '1';
+            el.style.transform = 'translateY(0)';
+        });
+    });
 });
 </script>
 
