@@ -1,0 +1,146 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg-dark: #090909;
+  --color-surface-dark: #111111;
+  --color-card-dark: #171717;
+  --color-primary-red: #DC2626;
+  --color-gold-accent: #D4AF37;
+  --color-primary-text: #F5F5F5;
+  --color-secondary-text: #A1A1AA;
+  --color-border-light: rgba(255, 255, 255, 0.08);
+
+  --font-sans: var(--font-inter), 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-playfair), 'Playfair Display', 'Georgia', serif;
+}
+
+:root {
+  --background: #090909;
+  --foreground: #F5F5F5;
+}
+
+body {
+  background-color: #090909;
+  color: #F5F5F5;
+  font-family: var(--font-inter), 'Inter', ui-sans-serif, system-ui, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Playfair Display for all hero titles, section headings, major marketing copy */
+.font-playfair {
+  font-family: var(--font-playfair), 'Playfair Display', 'Georgia', serif;
+}
+
+/* Inter for navigation, buttons, descriptions, cards, forms, and UI elements */
+.font-inter {
+  font-family: var(--font-inter), 'Inter', ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Custom Film Grain Overlay */
+.film-grain {
+  position: fixed;
+  top: -50%;
+  left: -50%;
+  right: -50%;
+  bottom: -50%;
+  width: 200%;
+  height: 200%;
+  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  opacity: 0.025;
+  pointer-events: none;
+  z-index: 9999;
+  animation: grain 8s steps(10) infinite;
+}
+
+@keyframes grain {
+  0%, 100% { transform:translate(0, 0); }
+  10% { transform:translate(-5%, -10%); }
+  20% { transform:translate(-15%, 5%); }
+  30% { transform:translate(7%, -25%); }
+  40% { transform:translate(-5%, 25%); }
+  50% { transform:translate(-15%, 10%); }
+  60% { transform:translate(15%, 0%); }
+  75% { transform:translate(-10%, 25%); }
+  90% { transform:translate(10%, -10%); }
+}
+
+/* Glassmorphism Styles */
+.glass-effect {
+  background: rgba(23, 23, 23, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-effect-hover:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Projector Beam Effect */
+.projector-beam {
+  position: absolute;
+  top: 10%;
+  left: -20%;
+  width: 80%;
+  height: 60%;
+  background: radial-gradient(ellipse at left, rgba(212, 175, 55, 0.08) 0%, rgba(220, 38, 38, 0.02) 50%, rgba(0, 0, 0, 0) 100%);
+  transform: rotate(15deg);
+  pointer-events: none;
+  filter: blur(40px);
+  z-index: 1;
+}
+
+/* Floating Particles (Dust) */
+.dust-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.dust-particle {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: float 20s infinite linear;
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(100vh) translateX(0) scale(0.8);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.4;
+  }
+  90% {
+    opacity: 0.4;
+  }
+  100% {
+    transform: translateY(-10vh) translateX(100px) scale(1.2);
+    opacity: 0;
+  }
+}
+
+/* Cinematic text drop-shadow */
+.cinematic-text-shadow {
+  text-shadow: 0 4px 20px rgba(220, 38, 38, 0.2);
+}
+
+/* Scroll Blur Nav */
+.scroll-nav {
+  transition: all 0.4s ease;
+}
+
+.scroll-nav-active {
+  background: rgba(9, 9, 9, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
