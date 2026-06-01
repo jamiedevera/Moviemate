@@ -1,5 +1,5 @@
 <?php
-// api/stats.php — Returns live platform stats as JSON
+// api/db-stats.php — Returns live platform stats as JSON
 
 require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/../db.php';

@@ -13,7 +13,7 @@ export async function GET() {
       process.env.NEXT_PUBLIC_BASE_URL ||
       (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
 
-    const res = await fetch(`${baseUrl}/api/stats.php`, {
+    const res = await fetch(`${baseUrl}/api/db-stats.php`, {
       next: { revalidate: 300 },
     });
 
