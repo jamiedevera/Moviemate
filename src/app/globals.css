@@ -149,21 +149,122 @@ body {
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-/* Vertical scrolling marquee for popular movies */
-@keyframes vertical-marquee {
-  0% {
-    transform: translateY(0);
-  }
-  100% {
-    transform: translateY(-50%);
-  }
+/* ── Film Strip ── */
+@keyframes filmstrip-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
 }
 
-.animate-vertical-marquee {
-  animation: vertical-marquee 40s linear infinite;
+.filmstrip-track {
+  display: flex;
+  gap: 16px;
+  animation: filmstrip-scroll 60s linear infinite;
+  will-change: transform;
 }
 
-.animate-vertical-marquee:hover {
+.filmstrip-track:hover,
+.filmstrip-track.dragging {
   animation-play-state: paused;
+}
+
+/* Sprocket holes – top and bottom */
+.filmstrip-sprockets {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 22px;
+  z-index: 20;
+  pointer-events: none;
+  background:
+    /* dark border strip */
+    linear-gradient(to right, #1a1408, #2a2010, #1a1408);
+}
+
+.filmstrip-sprockets::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: 8px;
+  right: 8px;
+  height: 14px;
+  background: repeating-linear-gradient(
+    to right,
+    rgba(245, 230, 180, 0.35) 0px,
+    rgba(245, 230, 180, 0.35) 12px,
+    transparent 12px,
+    transparent 28px
+  );
+  border-radius: 2px;
+  mask-image: repeating-linear-gradient(
+    to right,
+    black 0px, black 12px,
+    transparent 12px, transparent 28px
+  );
+  -webkit-mask-image: repeating-linear-gradient(
+    to right,
+    black 0px, black 12px,
+    transparent 12px, transparent 28px
+  );
+}
+
+.filmstrip-sprockets.top { top: 0; }
+.filmstrip-sprockets.bottom { bottom: 0; }
+
+/* Film strip container */
+.filmstrip-container {
+  position: relative;
+  overflow: hidden;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  background: linear-gradient(to right, #0f0d08, #1a1710, #0f0d08);
+  border-top: 1px solid rgba(212, 175, 55, 0.15);
+  border-bottom: 1px solid rgba(212, 175, 55, 0.15);
+}
+
+.filmstrip-container:active {
+  cursor: grabbing;
+}
+
+/* Film strip poster frame */
+.filmstrip-frame {
+  position: relative;
+  flex-shrink: 0;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow:
+    0 0 0 1px rgba(212, 175, 55, 0.12),
+    0 4px 20px rgba(0, 0, 0, 0.6);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.filmstrip-frame:hover {
+  transform: scale(1.04);
+  box-shadow:
+    0 0 0 1px rgba(212, 175, 55, 0.3),
+    0 8px 30px rgba(0, 0, 0, 0.8),
+    0 0 20px rgba(212, 175, 55, 0.08);
+  z-index: 10;
+}
+
+/* Edge fade for seamless loop illusion */
+.filmstrip-fade-left,
+.filmstrip-fade-right {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 80px;
+  z-index: 15;
+  pointer-events: none;
+}
+
+.filmstrip-fade-left {
+  left: 0;
+  background: linear-gradient(to right, #090909 0%, transparent 100%);
+}
+
+.filmstrip-fade-right {
+  right: 0;
+  background: linear-gradient(to left, #090909 0%, transparent 100%);
 }
 

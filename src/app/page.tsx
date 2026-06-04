@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
-import { motion, AnimatePresence, useMotionValue, useSpring } from "framer-motion";
+import { useEffect, useState, useRef, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Ticket,
   Film,
@@ -217,7 +217,40 @@ export default function Home() {
     ? stats.popular
     : fallbackPopularMovies;
 
-  const marqueeList = [...popularList, ...popularList, ...popularList];
+  // Duplicate 4x for seamless infinite loop
+  const filmstripList = [...popularList, ...popularList, ...popularList, ...popularList];
+
+  // Film strip drag-to-scroll
+  const filmstripRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartX = useRef(0);
+  const scrollStartX = useRef(0);
+
+  const handleDragStart = useCallback((e: React.MouseEvent) => {
+    if (!trackRef.current) return;
+    setIsDragging(true);
+    dragStartX.current = e.clientX;
+    // Get current CSS transform translateX
+    const style = window.getComputedStyle(trackRef.current);
+    const matrix = new DOMMatrix(style.transform);
+    scrollStartX.current = matrix.m41; // translateX value
+  }, []);
+
+  const handleDragMove = useCallback((e: React.MouseEvent) => {
+    if (!isDragging || !trackRef.current) return;
+    const dx = e.clientX - dragStartX.current;
+    trackRef.current.style.transform = `translateX(${scrollStartX.current + dx}px)`;
+  }, [isDragging]);
+
+  const handleDragEnd = useCallback(() => {
+    if (!isDragging) return;
+    setIsDragging(false);
+    // Let the CSS animation resume from current position — reset inline style
+    if (trackRef.current) {
+      trackRef.current.style.transform = "";
+    }
+  }, [isDragging]);
 
   return (
     <div className="relative min-h-screen bg-bg-dark text-primary-text font-inter overflow-x-hidden">
@@ -301,10 +334,10 @@ export default function Home() {
 
         {/* Hero content */}
         <div className="relative z-10 max-w-7xl mx-auto px-6 w-full pt-20">
-          <div className="flex items-center justify-between gap-12">
+          <div className="flex items-center justify-center">
 
-            {/* LEFT — Main copy */}
-            <div className="flex-1 max-w-2xl">
+            {/* Main copy — centered */}
+            <div className="flex-1 max-w-2xl text-center md:text-left">
               {/* Badge */}
               <motion.div
                 initial={{ opacity: 0, y: -16 }}
@@ -339,7 +372,7 @@ export default function Home() {
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.7, delay: 0.25 }}
-                className="text-lg text-secondary-text font-inter font-light leading-relaxed mb-10 max-w-md"
+                className="text-lg text-secondary-text font-inter font-light leading-relaxed mb-10 max-w-md md:max-w-md mx-auto md:mx-0"
               >
                 Swipe together. Match instantly. Watch happier.
               </motion.p>
@@ -349,7 +382,7 @@ export default function Home() {
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.7, delay: 0.35 }}
-                className="flex flex-wrap gap-4"
+                className="flex flex-wrap gap-4 justify-center md:justify-start"
               >
                 <a
                   href="/start-session.php"
@@ -367,71 +400,89 @@ export default function Home() {
                 </a>
               </motion.div>
             </div>
-
-            {/* RIGHT — NOW SHOWING scroll of popular movies */}
-            <motion.div
-              initial={{ opacity: 0, x: 40 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.9, delay: 0.4 }}
-              className="hidden lg:block flex-shrink-0 relative w-60 h-[450px] overflow-hidden rounded-xl border border-white/10 shadow-2xl bg-card-dark"
-            >
-              {/* Marquee header */}
-              <div className="absolute top-0 left-0 right-0 z-20 bg-primary-red/90 px-4 py-2.5 text-center shadow-md border-b border-white/5">
-                <span className="text-white text-xs font-bold tracking-[0.3em] uppercase font-inter">
-                  Now Showing
-                </span>
-              </div>
-
-              {/* Scroll container */}
-              <div className="w-full h-full pt-11 pb-4 overflow-hidden relative">
-                <div className="animate-vertical-marquee flex flex-col gap-4 py-3">
-                  {marqueeList.map((movie, idx) => (
-                    <div
-                      key={idx}
-                      className="relative group rounded-lg overflow-hidden border border-white/5 bg-zinc-900 shadow-md aspect-[2/3] mx-4 flex-shrink-0"
-                    >
-                      {movie.poster ? (
-                        <img
-                          src={movie.poster}
-                          alt={movie.title}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gradient-to-b from-zinc-800 to-zinc-900 flex items-center justify-center p-4">
-                          <Film className="w-8 h-8 text-secondary-text opacity-30" />
-                        </div>
-                      )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/35 to-transparent opacity-90 transition-opacity duration-300" />
-                      <div className="absolute bottom-0 left-0 right-0 p-3 text-left">
-                        <div className="flex items-center gap-1 mb-1">
-                          <Star className="w-3 h-3 text-gold-accent fill-gold-accent" />
-                          <span className="text-[10px] text-white font-bold">
-                            {movie.rating > 0 ? movie.rating.toFixed(1) : "N/A"}
-                          </span>
-                        </div>
-                        <h4 className="text-xs font-playfair font-bold text-white leading-snug line-clamp-1">
-                          {movie.title}
-                        </h4>
-                        <p className="text-[9px] text-secondary-text mt-0.5 font-inter font-light">
-                          {movie.year} · Popular
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Fade overlays at top and bottom */}
-              <div className="absolute top-10 left-0 right-0 h-10 bg-gradient-to-b from-card-dark to-transparent pointer-events-none z-10" />
-              <div className="absolute bottom-0 left-0 right-0 h-14 bg-gradient-to-t from-card-dark to-transparent pointer-events-none z-10" />
-            </motion.div>
           </div>
         </div>
 
         {/* Scroll indicator */}
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-2 opacity-40">
           <div className="w-px h-12 bg-gradient-to-b from-white to-transparent animate-pulse" />
+        </div>
+      </section>
+
+      {/* ── FILM STRIP — Popular Movies ── */}
+      <section className="relative py-0 bg-bg-dark">
+        {/* Section label */}
+        <div className="max-w-7xl mx-auto px-6 pt-10 pb-5 flex items-center gap-3">
+          <Film className="w-5 h-5 text-gold-accent" />
+          <span className="text-xs font-bold tracking-[0.3em] uppercase text-gold-accent font-inter">
+            Popular Right Now
+          </span>
+          <div className="flex-1 h-px bg-gradient-to-r from-gold-accent/20 to-transparent" />
+        </div>
+
+        {/* Film strip */}
+        <div
+          ref={filmstripRef}
+          className="filmstrip-container"
+          onMouseDown={handleDragStart}
+          onMouseMove={handleDragMove}
+          onMouseUp={handleDragEnd}
+          onMouseLeave={handleDragEnd}
+        >
+          {/* Sprocket holes top */}
+          <div className="filmstrip-sprockets top" />
+
+          {/* Poster track */}
+          <div className="py-[26px] px-4">
+            <div
+              ref={trackRef}
+              className={`filmstrip-track${isDragging ? " dragging" : ""}`}
+            >
+              {filmstripList.map((movie, idx) => (
+                <div
+                  key={idx}
+                  className="filmstrip-frame"
+                  style={{ width: 180, height: 270 }}
+                >
+                  {movie.poster ? (
+                    <img
+                      src={movie.poster}
+                      alt={movie.title}
+                      className="w-full h-full object-cover pointer-events-none"
+                      loading="lazy"
+                      draggable={false}
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-b from-zinc-800 to-zinc-900 flex items-center justify-center">
+                      <Film className="w-8 h-8 text-secondary-text opacity-30" />
+                    </div>
+                  )}
+                  {/* Overlay info */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3">
+                    <div className="flex items-center gap-1 mb-1">
+                      <Star className="w-3.5 h-3.5 text-gold-accent fill-gold-accent" />
+                      <span className="text-xs text-white font-bold">
+                        {movie.rating > 0 ? movie.rating.toFixed(1) : "N/A"}
+                      </span>
+                    </div>
+                    <h4 className="text-sm font-playfair font-bold text-white leading-snug line-clamp-2">
+                      {movie.title}
+                    </h4>
+                    <p className="text-[10px] text-secondary-text mt-0.5 font-inter font-light">
+                      {movie.year}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Sprocket holes bottom */}
+          <div className="filmstrip-sprockets bottom" />
+
+          {/* Edge fades */}
+          <div className="filmstrip-fade-left" />
+          <div className="filmstrip-fade-right" />
         </div>
       </section>
 
