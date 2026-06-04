@@ -25,11 +25,30 @@ interface Particle {
   duration: string;
 }
 
+interface MovieItem {
+  id: number;
+  title: string;
+  poster: string | null;
+  rating: number;
+  year: number | string;
+}
+
 interface Stats {
   movies: number;
   matches: number;
   satisfaction: number;
+  popular?: MovieItem[];
 }
+
+const fallbackPopularMovies: MovieItem[] = [
+  { id: 1, title: "Dune: Part Two", poster: "https://image.tmdb.org/t/p/w342/czemb5hm1a88L924u6iU1X54aaR.jpg", rating: 8.3, year: 2024 },
+  { id: 2, title: "Deadpool & Wolverine", poster: "https://image.tmdb.org/t/p/w342/8cdWjvZ1ZUD28750yPVmNf5Rihg.jpg", rating: 7.7, year: 2024 },
+  { id: 3, title: "Inside Out 2", poster: "https://image.tmdb.org/t/p/w342/vpnVM9B6mFJ44vY78QC4ok658oD.jpg", rating: 7.6, year: 2024 },
+  { id: 4, title: "Oppenheimer", poster: "https://image.tmdb.org/t/p/w342/8Gxv2wS0EH1SliPWwBg7xdZvRQI.jpg", rating: 8.1, year: 2023 },
+  { id: 5, title: "Gladiator II", poster: "https://image.tmdb.org/t/p/w342/2cxh2wG4ST1FhZgDY04XlDAj1Yk.jpg", rating: 6.9, year: 2024 },
+  { id: 6, title: "Interstellar", poster: "https://image.tmdb.org/t/p/w342/gEU2Qv4wU6JvKWfvwaUR85XaZOF.jpg", rating: 8.4, year: 2014 }
+];
+
 
 // Animated counter hook
 function useCountUp(target: number, duration = 2000, start = false) {
@@ -194,6 +213,12 @@ export default function Home() {
     { icon: <Heart className="w-7 h-7 fill-current" />, emoji: "❤️", title: "Match Movies", desc: "Get matched and find your perfect movie to watch." },
   ];
 
+  const popularList = (stats?.popular && stats.popular.length > 0)
+    ? stats.popular
+    : fallbackPopularMovies;
+
+  const marqueeList = [...popularList, ...popularList, ...popularList];
+
   return (
     <div className="relative min-h-screen bg-bg-dark text-primary-text font-inter overflow-x-hidden">
 
@@ -343,41 +368,63 @@ export default function Home() {
               </motion.div>
             </div>
 
-            {/* RIGHT — NOW SHOWING card */}
+            {/* RIGHT — NOW SHOWING scroll of popular movies */}
             <motion.div
               initial={{ opacity: 0, x: 40 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.9, delay: 0.4 }}
-              className="hidden lg:block flex-shrink-0"
+              className="hidden lg:block flex-shrink-0 relative w-60 h-[450px] overflow-hidden rounded-xl border border-white/10 shadow-2xl bg-card-dark"
             >
-              <div className="relative w-56 rounded-lg overflow-hidden border border-white/10 shadow-2xl shadow-black/80 bg-card-dark">
-                {/* Marquee header */}
-                <div className="bg-primary-red/90 px-4 py-2 text-center">
-                  <span className="text-white text-xs font-bold tracking-[0.3em] uppercase font-inter">
-                    Now Showing
-                  </span>
-                </div>
-                {/* Poster placeholder */}
-                <div className="aspect-[2/3] relative bg-gradient-to-b from-zinc-800 to-zinc-900 flex items-end p-4">
-                  <div className="absolute inset-0 opacity-30 bg-[radial-gradient(ellipse_at_center,rgba(220,38,38,0.5),transparent_70%)]" />
-                  {/* Silhouette couple */}
-                  <div className="relative z-10 w-full">
-                    <div className="flex items-center gap-1 mb-1">
-                      <Star className="w-3 h-3 text-gold-accent fill-gold-accent" />
-                      <Star className="w-3 h-3 text-gold-accent fill-gold-accent" />
-                      <Star className="w-3 h-3 text-gold-accent fill-gold-accent" />
-                      <Star className="w-3 h-3 text-gold-accent fill-gold-accent" />
-                      <Star className="w-3 h-3 text-gold-accent fill-gold-accent" />
-                    </div>
-                    <p className="text-white text-xs font-playfair font-bold italic leading-snug">
-                      "The Story of Us"
-                    </p>
-                    <p className="text-secondary-text text-[10px] mt-0.5 font-inter">2024 · Romance</p>
-                  </div>
-                </div>
-                {/* Bottom glow */}
-                <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-primary-red/20 to-transparent pointer-events-none" />
+              {/* Marquee header */}
+              <div className="absolute top-0 left-0 right-0 z-20 bg-primary-red/90 px-4 py-2.5 text-center shadow-md border-b border-white/5">
+                <span className="text-white text-xs font-bold tracking-[0.3em] uppercase font-inter">
+                  Now Showing
+                </span>
               </div>
+
+              {/* Scroll container */}
+              <div className="w-full h-full pt-11 pb-4 overflow-hidden relative">
+                <div className="animate-vertical-marquee flex flex-col gap-4 py-3">
+                  {marqueeList.map((movie, idx) => (
+                    <div
+                      key={idx}
+                      className="relative group rounded-lg overflow-hidden border border-white/5 bg-zinc-900 shadow-md aspect-[2/3] mx-4 flex-shrink-0"
+                    >
+                      {movie.poster ? (
+                        <img
+                          src={movie.poster}
+                          alt={movie.title}
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-b from-zinc-800 to-zinc-900 flex items-center justify-center p-4">
+                          <Film className="w-8 h-8 text-secondary-text opacity-30" />
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/35 to-transparent opacity-90 transition-opacity duration-300" />
+                      <div className="absolute bottom-0 left-0 right-0 p-3 text-left">
+                        <div className="flex items-center gap-1 mb-1">
+                          <Star className="w-3 h-3 text-gold-accent fill-gold-accent" />
+                          <span className="text-[10px] text-white font-bold">
+                            {movie.rating > 0 ? movie.rating.toFixed(1) : "N/A"}
+                          </span>
+                        </div>
+                        <h4 className="text-xs font-playfair font-bold text-white leading-snug line-clamp-1">
+                          {movie.title}
+                        </h4>
+                        <p className="text-[9px] text-secondary-text mt-0.5 font-inter font-light">
+                          {movie.year} · Popular
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Fade overlays at top and bottom */}
+              <div className="absolute top-10 left-0 right-0 h-10 bg-gradient-to-b from-card-dark to-transparent pointer-events-none z-10" />
+              <div className="absolute bottom-0 left-0 right-0 h-14 bg-gradient-to-t from-card-dark to-transparent pointer-events-none z-10" />
             </motion.div>
           </div>
         </div>

@@ -148,3 +148,22 @@ body {
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
+
+/* Vertical scrolling marquee for popular movies */
+@keyframes vertical-marquee {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-50%);
+  }
+}
+
+.animate-vertical-marquee {
+  animation: vertical-marquee 40s linear infinite;
+}
+
+.animate-vertical-marquee:hover {
+  animation-play-state: paused;
+}
+
