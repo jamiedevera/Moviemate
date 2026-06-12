@@ -22,21 +22,50 @@ try {
     $stmt->execute(['id' => $sessionId]);
 } catch (PDOException $e) {
     error_log('Failed to create session: ' . $e->getMessage());
-    die('Database error occurred while starting session.');
+
+    // Return error as JSON if requested, else plain text
+    $wantsJson = (
+        (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false) ||
+        (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest')
+    );
+    if ($wantsJson) {
+        http_response_code(500);
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'error' => 'Database error occurred while starting session.']);
+    } else {
+        die('Database error occurred while starting session.');
+    }
+    exit;
 }
 
 $base = '';
 if (isset($_SERVER['DOCUMENT_ROOT'])) {
     $docRoot = str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT']);
-    $dir = str_replace('\\', '/', __DIR__);
-    $docRootLower = strtolower($docRoot);
-    $dirLower = strtolower($dir);
-    if (strpos($dirLower, $docRootLower) === 0) {
+    $dir     = str_replace('\\', '/', __DIR__);
+    if (strpos(strtolower($dir), strtolower($docRoot)) === 0) {
         $base = substr($dir, strlen($docRoot));
     }
 }
 $base = rtrim($base, '/\\');
 
-// Redirect to Person A's selection page
-header("Location: {$base}/m/{$sessionId}/a");
+$redirectUrl = "{$base}/m/{$sessionId}/a";
+
+// --- JSON response for fetch()-based callers (Next.js session flow) ---
+$wantsJson = (
+    (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false) ||
+    (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest')
+);
+
+if ($wantsJson) {
+    header('Content-Type: application/json');
+    echo json_encode([
+        'success'   => true,
+        'sessionId' => $sessionId,
+        'url'       => $redirectUrl,
+    ]);
+    exit;
+}
+
+// --- Legacy redirect for direct form-POST callers ---
+header("Location: {$redirectUrl}");
 exit;
