@@ -273,3 +273,44 @@
   letter-spacing: 0.15em;
   transition: color 0.4s ease;
 }
+
+/* ── Invite link box (Step 3) ─────────────────────────────────────────────── */
+.inviteBox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 10px;
+  box-sizing: border-box;
+}
+
+.inviteUrl {
+  flex: 1;
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.5);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: monospace;
+}
+
+.copyBtn {
+  flex-shrink: 0;
+  padding: 0.35rem 0.75rem;
+  background: rgba(229,9,20,0.15);
+  border: 1px solid rgba(229,9,20,0.4);
+  border-radius: 6px;
+  color: #e50914;
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.copyBtn:hover {
+  background: rgba(229,9,20,0.25);
+}
