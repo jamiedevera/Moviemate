@@ -135,7 +135,6 @@ export default function Home() {
         setStatsLoading(false);
       })
       .catch(() => {
-        // On error, show zeroed stats
         setStats({ movies: 0, matches: 0, satisfaction: 0 });
         setStatsLoading(false);
       });
@@ -217,10 +216,8 @@ export default function Home() {
     ? stats.popular
     : fallbackPopularMovies;
 
-  // Duplicate 4x for seamless infinite loop
   const filmstripList = [...popularList, ...popularList, ...popularList, ...popularList];
 
-  // Film strip drag-to-scroll
   const filmstripRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -231,10 +228,9 @@ export default function Home() {
     if (!trackRef.current) return;
     setIsDragging(true);
     dragStartX.current = e.clientX;
-    // Get current CSS transform translateX
     const style = window.getComputedStyle(trackRef.current);
     const matrix = new DOMMatrix(style.transform);
-    scrollStartX.current = matrix.m41; // translateX value
+    scrollStartX.current = matrix.m41;
   }, []);
 
   const handleDragMove = useCallback((e: React.MouseEvent) => {
@@ -246,7 +242,6 @@ export default function Home() {
   const handleDragEnd = useCallback(() => {
     if (!isDragging) return;
     setIsDragging(false);
-    // Let the CSS animation resume from current position — reset inline style
     if (trackRef.current) {
       trackRef.current.style.transform = "";
     }
@@ -314,10 +309,8 @@ export default function Home() {
             alt="Cinematic theater background"
             className="w-full h-full object-cover object-center select-none"
           />
-          {/* Layered overlays for depth */}
           <div className="absolute inset-0 bg-gradient-to-r from-black/95 via-black/60 to-black/80" />
           <div className="absolute inset-0 bg-gradient-to-t from-bg-dark via-transparent to-bg-dark/40" />
-          {/* Golden projector glow on the left */}
           <div className="absolute top-0 left-0 w-1/2 h-full bg-[radial-gradient(ellipse_at_left_center,rgba(212,175,55,0.07)_0%,transparent_60%)]" />
         </div>
 
@@ -336,7 +329,6 @@ export default function Home() {
         <div className="relative z-10 max-w-7xl mx-auto px-6 w-full pt-20">
           <div className="flex items-center justify-center">
 
-            {/* Main copy — centered */}
             <div className="flex-1 max-w-2xl text-center md:text-left">
               {/* Badge */}
               <motion.div
@@ -356,11 +348,9 @@ export default function Home() {
                 transition={{ duration: 0.8, delay: 0.1 }}
               >
                 <h1 className="font-playfair leading-none mb-6">
-                  {/* MOVIE in white */}
                   <span className="block text-[clamp(4rem,12vw,8rem)] font-black text-white tracking-tight cinematic-text-shadow">
                     MOVIE
                   </span>
-                  {/* MATE in red */}
                   <span className="block text-[clamp(4rem,12vw,8rem)] font-black text-primary-red tracking-tight leading-none" style={{ marginTop: "-0.15em" }}>
                     MATE
                   </span>
@@ -385,7 +375,7 @@ export default function Home() {
                 className="flex flex-wrap gap-4 justify-center md:justify-start"
               >
                 <a
-                  href="/start-session"
+                  href="/session"
                   className="inline-flex items-center gap-2 px-7 py-3.5 bg-primary-red text-white text-sm font-bold rounded-md shadow-2xl shadow-red-950/60 hover:bg-red-700 active:scale-95 transition-all duration-200 group"
                 >
                   Start Matching
@@ -411,7 +401,6 @@ export default function Home() {
 
       {/* ── FILM STRIP — Popular Movies ── */}
       <section className="relative py-0 bg-bg-dark">
-        {/* Section label */}
         <div className="max-w-7xl mx-auto px-6 pt-10 pb-5 flex items-center gap-3">
           <Film className="w-5 h-5 text-gold-accent" />
           <span className="text-xs font-bold tracking-[0.3em] uppercase text-gold-accent font-inter">
@@ -420,7 +409,6 @@ export default function Home() {
           <div className="flex-1 h-px bg-gradient-to-r from-gold-accent/20 to-transparent" />
         </div>
 
-        {/* Film strip */}
         <div
           ref={filmstripRef}
           className="filmstrip-container"
@@ -429,10 +417,7 @@ export default function Home() {
           onMouseUp={handleDragEnd}
           onMouseLeave={handleDragEnd}
         >
-          {/* Sprocket holes top */}
           <div className="filmstrip-sprockets top" />
-
-          {/* Poster track */}
           <div className="py-[26px] px-4">
             <div
               ref={trackRef}
@@ -457,7 +442,6 @@ export default function Home() {
                       <Film className="w-8 h-8 text-secondary-text opacity-30" />
                     </div>
                   )}
-                  {/* Overlay info */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3">
                     <div className="flex items-center gap-1 mb-1">
                       <Star className="w-3.5 h-3.5 text-gold-accent fill-gold-accent" />
@@ -476,11 +460,7 @@ export default function Home() {
               ))}
             </div>
           </div>
-
-          {/* Sprocket holes bottom */}
           <div className="filmstrip-sprockets bottom" />
-
-          {/* Edge fades */}
           <div className="filmstrip-fade-left" />
           <div className="filmstrip-fade-right" />
         </div>
@@ -515,7 +495,6 @@ export default function Home() {
                     {step.desc}
                   </p>
                 </motion.div>
-                {/* Arrow connector */}
                 {i < 3 && (
                   <div className="hidden md:flex absolute top-1/2 -right-4 -translate-y-1/2 z-20 text-border-light/60 text-lg pointer-events-none">
                     ➔
@@ -599,7 +578,6 @@ export default function Home() {
 
       {/* ── FINAL CTA ── */}
       <section className="relative py-28 bg-surface-dark border-t border-border-light overflow-hidden">
-        {/* Subtle background image */}
         <div className="absolute inset-0 opacity-10">
           <img src="/images/cinematic_hero_bg.png" alt="" className="w-full h-full object-cover" />
         </div>
@@ -614,7 +592,7 @@ export default function Home() {
             Find your perfect movie with your favorite person. Zero friction, total cinematic alignment.
           </p>
           <a
-            href="/start-session"
+            href="/session"
             className="inline-flex items-center gap-2 px-8 py-4 bg-primary-red hover:bg-red-700 text-white font-bold rounded-md shadow-2xl shadow-red-950/60 active:scale-95 transition-all duration-200 group text-base"
           >
             Start Your Session
