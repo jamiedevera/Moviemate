@@ -78,11 +78,10 @@ if (preg_match('#^/m/([a-f0-9]{16})/a/?$#', $path, $matches)) {
     return true;
 }
 
-// /m/<session>/b
+// /m/<session>/b — show name entry first (join.php), then choose.php
 if (preg_match('#^/m/([a-f0-9]{16})/b/?$#', $path, $matches)) {
     $_GET['session'] = $matches[1];
-    $_GET['who'] = 'B';
-    require 'choose.php';
+    require 'join.php';
     return true;
 }
 
