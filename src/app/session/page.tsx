@@ -3,31 +3,43 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import styles from './session.module.css';
 
-type Step = 1 | 2 | 3;
-
-interface SessionState {
-  name: string;
-  sessionId: string;
-  chooseUrl: string;
-  inviteUrl: string;
-}
+type Step = 1 | 2;
 
 function buildInviteUrl(sessionId: string): string {
   if (typeof window === 'undefined') return '';
   return `${window.location.origin}/m/${sessionId}`;
 }
 
-// ── Step 1 — Name entry ───────────────────────────────────────────────────────
-function StepName({ onContinue }: { onContinue: (name: string) => void }) {
+// ── Step 1 — Name entry + session creation ────────────────────────────────────
+function StepName({ onDone }: { onDone: (name: string, sessionId: string, chooseUrl: string, inviteUrl: string) => void }) {
   const [name, setName] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { inputRef.current?.focus(); }, []);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = name.trim();
-    if (trimmed) onContinue(trimmed);
+    if (!trimmed) return;
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch('/start-session', {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+      });
+      if (!res.ok) throw new Error(`Server error: ${res.status}`);
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error ?? 'Failed to start session.');
+      const inviteUrl = buildInviteUrl(data.sessionId);
+      localStorage.setItem('mm_name', trimmed);
+      onDone(trimmed, data.sessionId, data.url, inviteUrl);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Something went wrong.');
+      setLoading(false);
+    }
   }
 
   return (
@@ -45,59 +57,18 @@ function StepName({ onContinue }: { onContinue: (name: string) => void }) {
           onChange={(e) => setName(e.target.value)}
           maxLength={40}
           autoComplete="off"
+          disabled={loading}
         />
-        <button className={styles.btn} type="submit" disabled={!name.trim()}>
-          Continue
+        {error && <p className={styles.error}>{error}</p>}
+        <button className={styles.btn} type="submit" disabled={!name.trim() || loading}>
+          {loading ? 'Setting up your room…' : 'Continue'}
         </button>
       </form>
     </div>
   );
 }
 
-// ── Step 2 — Create session ───────────────────────────────────────────────────
-function StepStart({
-  name,
-  onSessionCreated,
-}: {
-  name: string;
-  onSessionCreated: (sessionId: string, chooseUrl: string) => void;
-}) {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  async function handleStart() {
-    setLoading(true);
-    setError('');
-    try {
-      const res = await fetch('/start-session', {
-        method: 'POST',
-        headers: { Accept: 'application/json' },
-      });
-      if (!res.ok) throw new Error(`Server error: ${res.status}`);
-      const data = await res.json();
-      if (!data.success) throw new Error(data.error ?? 'Failed to start session.');
-      onSessionCreated(data.sessionId, data.url);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Something went wrong.';
-      setError(msg);
-      setLoading(false);
-    }
-  }
-
-  return (
-    <div className={styles.step}>
-      <span className={styles.stepIcon}>🍿</span>
-      <h1 className={styles.heading}>Get started, {name}</h1>
-      <p className={styles.sub}>Start your MovieMate session and get ready for a shared movie night.</p>
-      {error && <p className={styles.error}>{error}</p>}
-      <button className={styles.btn} onClick={handleStart} disabled={loading}>
-        {loading ? 'Setting up…' : 'Continue'}
-      </button>
-    </div>
-  );
-}
-
-// ── Step 3 — Room / invite ────────────────────────────────────────────────────
+// ── Step 2 — Room / invite ────────────────────────────────────────────────────
 function StepRoom({
   name,
   sessionId,
@@ -132,9 +103,8 @@ function StepRoom({
   }, [poll]);
 
   async function copyInvite() {
-    try {
-      await navigator.clipboard.writeText(inviteUrl);
-    } catch {
+    try { await navigator.clipboard.writeText(inviteUrl); }
+    catch {
       const ta = document.createElement('textarea');
       ta.value = inviteUrl;
       document.body.appendChild(ta);
@@ -159,6 +129,7 @@ function StepRoom({
         {partnerJoined ? "You're both in" : 'Waiting for your MovieMate'}
       </p>
 
+      {/* Seats */}
       <div className={styles.room}>
         <div className={`${styles.seat} ${styles.seatYou}`}>
           <div className={styles.seatAvatar}>🎬</div>
@@ -173,20 +144,19 @@ function StepRoom({
         </div>
       </div>
 
-      {/* Invite link display */}
+      {/* Invite link — always visible until partner joins */}
       {!partnerJoined && (
-        <div className={styles.inviteBox}>
-          <span className={styles.inviteUrl}>{inviteUrl}</span>
-          <button className={styles.copyBtn} onClick={copyInvite}>
-            {copied ? '✓ Copied' : 'Copy link'}
+        <>
+          <div className={styles.inviteBox}>
+            <span className={styles.inviteUrl}>{inviteUrl}</span>
+            <button className={styles.copyBtn} onClick={copyInvite}>
+              {copied ? '✓ Copied' : 'Copy'}
+            </button>
+          </div>
+          <button className={styles.btnSecondary} onClick={copyInvite}>
+            {copied ? '✓ Link copied!' : 'Invite MovieMate'}
           </button>
-        </div>
-      )}
-
-      {!partnerJoined && (
-        <button className={styles.btnSecondary} onClick={copyInvite}>
-          {copied ? '✓ Copied!' : 'Invite MovieMate'}
-        </button>
+        </>
       )}
 
       {partnerJoined && (
@@ -198,37 +168,20 @@ function StepRoom({
   );
 }
 
-// ── Main page — always starts at step 1 ──────────────────────────────────────
+// ── Main — 2 steps only ───────────────────────────────────────────────────────
 export default function SessionPage() {
-  const [step, setStep] = useState<Step>(1); // always start at 1
+  const [step, setStep] = useState<Step>(1);
   const [transitioning, setTransitioning] = useState(false);
-  const [session, setSession] = useState<SessionState>({
-    name: '',
-    sessionId: '',
-    chooseUrl: '',
-    inviteUrl: '',
-  });
+  const [session, setSession] = useState({ name: '', sessionId: '', chooseUrl: '', inviteUrl: '' });
 
   function advance(nextStep: Step) {
     setTransitioning(true);
-    setTimeout(() => {
-      setStep(nextStep);
-      setTransitioning(false);
-    }, 280);
+    setTimeout(() => { setStep(nextStep); setTransitioning(false); }, 280);
   }
 
-  function handleNameContinue(name: string) {
-    // Store name but don't skip step — user explicitly entered it this session
-    setSession((s) => ({ ...s, name }));
+  function handleDone(name: string, sessionId: string, chooseUrl: string, inviteUrl: string) {
+    setSession({ name, sessionId, chooseUrl, inviteUrl });
     advance(2);
-  }
-
-  function handleSessionCreated(sessionId: string, chooseUrl: string) {
-    const inviteUrl = buildInviteUrl(sessionId);
-    // Persist name now that session is confirmed
-    localStorage.setItem('mm_name', session.name);
-    setSession((s) => ({ ...s, sessionId, chooseUrl, inviteUrl }));
-    advance(3);
   }
 
   return (
@@ -236,17 +189,14 @@ export default function SessionPage() {
       <div className={styles.grain} aria-hidden="true" />
 
       <div className={styles.dots} aria-label="Step indicator">
-        {([1, 2, 3] as Step[]).map((s) => (
+        {([1, 2] as Step[]).map((s) => (
           <span key={s} className={`${styles.dot} ${step === s ? styles.dotActive : ''}`} />
         ))}
       </div>
 
       <div className={`${styles.card} ${transitioning ? styles.cardOut : styles.cardIn}`}>
-        {step === 1 && <StepName onContinue={handleNameContinue} />}
+        {step === 1 && <StepName onDone={handleDone} />}
         {step === 2 && (
-          <StepStart name={session.name} onSessionCreated={handleSessionCreated} />
-        )}
-        {step === 3 && (
           <StepRoom
             name={session.name}
             sessionId={session.sessionId}
