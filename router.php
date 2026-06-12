@@ -107,6 +107,12 @@ if (preg_match('#^/m/([a-f0-9]{16})/status/?$#', $path, $matches)) {
     return true;
 }
 
+// /start-session
+if ($path === '/start-session' || $path === '/start-session/' || $path === '/start-session.php') {
+    require 'start-session.php';
+    return true;
+}
+
 // /api/auth
 if ($path === '/api/auth' || $path === '/api/auth/') {
     require 'auth.php';

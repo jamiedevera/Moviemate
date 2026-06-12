@@ -385,7 +385,7 @@ export default function Home() {
                 className="flex flex-wrap gap-4 justify-center md:justify-start"
               >
                 <a
-                  href="/start-session.php"
+                  href="/start-session"
                   className="inline-flex items-center gap-2 px-7 py-3.5 bg-primary-red text-white text-sm font-bold rounded-md shadow-2xl shadow-red-950/60 hover:bg-red-700 active:scale-95 transition-all duration-200 group"
                 >
                   Start Matching
@@ -614,7 +614,7 @@ export default function Home() {
             Find your perfect movie with your favorite person. Zero friction, total cinematic alignment.
           </p>
           <a
-            href="/start-session.php"
+            href="/start-session"
             className="inline-flex items-center gap-2 px-8 py-4 bg-primary-red hover:bg-red-700 text-white font-bold rounded-md shadow-2xl shadow-red-950/60 active:scale-95 transition-all duration-200 group text-base"
           >
             Start Your Session

@@ -22,7 +22,7 @@
       "destination": "/api/router.php"
     },
     {
-      "source": "/start-session.php",
+      "source": "/start-session",
       "destination": "/api/router.php"
     }
   ]

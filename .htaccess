@@ -8,6 +8,9 @@ RewriteRule ^ - [L]
 # Pretty URLs for MovieMate
 # (no RewriteBase needed on InfinityFree usually)
 
+# /start-session       → start-session.php
+RewriteRule ^start-session/?$ start-session.php [L,QSA]
+
 # /m/<session>         → join.php?session=<session>
 RewriteRule ^m/([a-f0-9]{16})/?$ join.php?session=$1 [L,QSA]
 

@@ -29,7 +29,7 @@ if (isset($_SERVER['DOCUMENT_ROOT'])) {
 $base = rtrim($base, '/\\');
 $mockSessionId = 'demo-session';
 $inviteLink   = "{$scheme}://{$host}{$base}/m/{$mockSessionId}";  // Demo shareable link
-$chooseLinkA  = "{$scheme}://{$host}{$base}/start-session.php";   // Triggers actual session creation on click
+$chooseLinkA  = "{$scheme}://{$host}{$base}/start-session";   // Triggers actual session creation on click
 ?>
 <!DOCTYPE html>
 <html lang="en">
