@@ -3,8 +3,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import styles from './session.module.css';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
 type Step = 1 | 2 | 3;
 
 interface SessionState {
@@ -14,24 +12,17 @@ interface SessionState {
   inviteUrl: string;
 }
 
-// ─── Utility ──────────────────────────────────────────────────────────────────
-
 function buildInviteUrl(sessionId: string): string {
   if (typeof window === 'undefined') return '';
-  const base = `${window.location.origin}`;
-  return `${base}/m/${sessionId}/b`;
+  return `${window.location.origin}/m/${sessionId}`;
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
-// Step 1 — Name entry
+// ── Step 1 — Name entry ───────────────────────────────────────────────────────
 function StepName({ onContinue }: { onContinue: (name: string) => void }) {
   const [name, setName] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
+  useEffect(() => { inputRef.current?.focus(); }, []);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -55,11 +46,7 @@ function StepName({ onContinue }: { onContinue: (name: string) => void }) {
           maxLength={40}
           autoComplete="off"
         />
-        <button
-          className={styles.btn}
-          type="submit"
-          disabled={!name.trim()}
-        >
+        <button className={styles.btn} type="submit" disabled={!name.trim()}>
           Continue
         </button>
       </form>
@@ -67,7 +54,7 @@ function StepName({ onContinue }: { onContinue: (name: string) => void }) {
   );
 }
 
-// Step 2 — Start session (calls PHP, gets session ID)
+// ── Step 2 — Create session ───────────────────────────────────────────────────
 function StepStart({
   name,
   onSessionCreated,
@@ -100,23 +87,17 @@ function StepStart({
   return (
     <div className={styles.step}>
       <span className={styles.stepIcon}>🍿</span>
-      <h1 className={styles.heading}>Get started</h1>
-      <p className={styles.sub}>
-        Start your MovieMate session and get ready for a shared movie night.
-      </p>
+      <h1 className={styles.heading}>Get started, {name}</h1>
+      <p className={styles.sub}>Start your MovieMate session and get ready for a shared movie night.</p>
       {error && <p className={styles.error}>{error}</p>}
-      <button
-        className={styles.btn}
-        onClick={handleStart}
-        disabled={loading}
-      >
+      <button className={styles.btn} onClick={handleStart} disabled={loading}>
         {loading ? 'Setting up…' : 'Continue'}
       </button>
     </div>
   );
 }
 
-// Step 3 — Room / presence
+// ── Step 3 — Room / invite ────────────────────────────────────────────────────
 function StepRoom({
   name,
   sessionId,
@@ -132,49 +113,40 @@ function StepRoom({
   const [copied, setCopied] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Poll session-status endpoint every 3 s
   const poll = useCallback(async () => {
     try {
       const res = await fetch(`/m/${sessionId}/status`, { cache: 'no-store' });
       if (!res.ok) return;
       const data = await res.json();
-      if (data?.bothDone || data?.bJoined) {
+      if (data?.bJoined || data?.bothDone) {
         setPartnerJoined(true);
         if (intervalRef.current) clearInterval(intervalRef.current);
       }
-    } catch {
-      // silent — polling, will retry
-    }
+    } catch { /* silent retry */ }
   }, [sessionId]);
 
   useEffect(() => {
     poll();
     intervalRef.current = setInterval(poll, 3000);
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [poll]);
 
   async function copyInvite() {
     try {
       await navigator.clipboard.writeText(inviteUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
     } catch {
-      // fallback for older browsers
       const ta = document.createElement('textarea');
       ta.value = inviteUrl;
       document.body.appendChild(ta);
       ta.select();
       document.execCommand('copy');
       document.body.removeChild(ta);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
     }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   }
 
   function handleProceed() {
-    // Persist name for PHP pages
     localStorage.setItem('mm_name', name);
     window.location.href = chooseUrl;
   }
@@ -188,26 +160,28 @@ function StepRoom({
       </p>
 
       <div className={styles.room}>
-        {/* You */}
         <div className={`${styles.seat} ${styles.seatYou}`}>
           <div className={styles.seatAvatar}>🎬</div>
           <div className={styles.seatLabel}>You</div>
           <div className={styles.seatName}>{name}</div>
         </div>
-
-        <div className={styles.roomDivider}>
-          {partnerJoined ? '❤️' : '···'}
-        </div>
-
-        {/* Partner */}
+        <div className={styles.roomDivider}>{partnerJoined ? '❤️' : '···'}</div>
         <div className={`${styles.seat} ${partnerJoined ? styles.seatPartnerJoined : styles.seatPartnerWaiting}`}>
           <div className={styles.seatAvatar}>{partnerJoined ? '🎬' : '?'}</div>
           <div className={styles.seatLabel}>Partner</div>
-          <div className={styles.seatName}>
-            {partnerJoined ? 'Joined' : 'Not joined yet'}
-          </div>
+          <div className={styles.seatName}>{partnerJoined ? 'Joined' : 'Not joined yet'}</div>
         </div>
       </div>
+
+      {/* Invite link display */}
+      {!partnerJoined && (
+        <div className={styles.inviteBox}>
+          <span className={styles.inviteUrl}>{inviteUrl}</span>
+          <button className={styles.copyBtn} onClick={copyInvite}>
+            {copied ? '✓ Copied' : 'Copy link'}
+          </button>
+        </div>
+      )}
 
       {!partnerJoined && (
         <button className={styles.btnSecondary} onClick={copyInvite}>
@@ -224,10 +198,9 @@ function StepRoom({
   );
 }
 
-// ─── Main page ────────────────────────────────────────────────────────────────
-
+// ── Main page — always starts at step 1 ──────────────────────────────────────
 export default function SessionPage() {
-  const [step, setStep] = useState<Step>(1);
+  const [step, setStep] = useState<Step>(1); // always start at 1
   const [transitioning, setTransitioning] = useState(false);
   const [session, setSession] = useState<SessionState>({
     name: '',
@@ -245,37 +218,31 @@ export default function SessionPage() {
   }
 
   function handleNameContinue(name: string) {
-    localStorage.setItem('mm_name', name);
+    // Store name but don't skip step — user explicitly entered it this session
     setSession((s) => ({ ...s, name }));
     advance(2);
   }
 
   function handleSessionCreated(sessionId: string, chooseUrl: string) {
     const inviteUrl = buildInviteUrl(sessionId);
+    // Persist name now that session is confirmed
+    localStorage.setItem('mm_name', session.name);
     setSession((s) => ({ ...s, sessionId, chooseUrl, inviteUrl }));
     advance(3);
   }
 
   return (
     <div className={styles.shell}>
-      {/* Ambient film-grain overlay */}
       <div className={styles.grain} aria-hidden="true" />
 
-      {/* Step indicator dots */}
       <div className={styles.dots} aria-label="Step indicator">
         {([1, 2, 3] as Step[]).map((s) => (
-          <span
-            key={s}
-            className={`${styles.dot} ${step === s ? styles.dotActive : ''}`}
-          />
+          <span key={s} className={`${styles.dot} ${step === s ? styles.dotActive : ''}`} />
         ))}
       </div>
 
-      {/* Step content */}
       <div className={`${styles.card} ${transitioning ? styles.cardOut : styles.cardIn}`}>
-        {step === 1 && (
-          <StepName onContinue={handleNameContinue} />
-        )}
+        {step === 1 && <StepName onContinue={handleNameContinue} />}
         {step === 2 && (
           <StepStart name={session.name} onSessionCreated={handleSessionCreated} />
         )}
