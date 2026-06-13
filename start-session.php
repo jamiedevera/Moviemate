@@ -22,39 +22,21 @@ try {
     $stmt->execute(['id' => $sessionId]);
 } catch (PDOException $e) {
     error_log('Failed to create session: ' . $e->getMessage());
-
-    // Return error as JSON if requested, else plain text
-    $wantsJson = (
-        (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false) ||
-        (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest')
-    );
+    $wantsJson = isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false;
     if ($wantsJson) {
         http_response_code(500);
         header('Content-Type: application/json');
-        echo json_encode(['success' => false, 'error' => 'Database error occurred while starting session.']);
+        echo json_encode(['success' => false, 'error' => 'Database error occurred.']);
     } else {
         die('Database error occurred while starting session.');
     }
     exit;
 }
 
-$base = '';
-if (isset($_SERVER['DOCUMENT_ROOT'])) {
-    $docRoot = str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT']);
-    $dir     = str_replace('\\', '/', __DIR__);
-    if (strpos(strtolower($dir), strtolower($docRoot)) === 0) {
-        $base = substr($dir, strlen($docRoot));
-    }
-}
-$base = rtrim($base, '/\\');
+$redirectUrl = "/m/{$sessionId}/a";
 
-$redirectUrl = "{$base}/m/{$sessionId}/a";
-
-// --- JSON response for fetch()-based callers (Next.js session flow) ---
-$wantsJson = (
-    (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false) ||
-    (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest')
-);
+// JSON response for fetch()-based callers (Next.js session flow)
+$wantsJson = isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false;
 
 if ($wantsJson) {
     header('Content-Type: application/json');
@@ -66,6 +48,6 @@ if ($wantsJson) {
     exit;
 }
 
-// --- Legacy redirect for direct form-POST callers ---
+// Legacy redirect for direct form-POST callers
 header("Location: {$redirectUrl}");
 exit;
