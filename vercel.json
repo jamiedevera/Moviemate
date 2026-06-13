@@ -7,24 +7,5 @@
       "runtime": "vercel-php@0.9.0",
       "excludeFiles": "{node_modules,src,.next,.git}/**"
     }
-  },
-  "cleanUrls": true,
-  "rewrites": [
-    {
-      "source": "/m/:session*",
-      "destination": "/api/router.php"
-    },
-    {
-      "source": "/logout",
-      "destination": "/api/router.php"
-    },
-    {
-      "source": "/api/auth",
-      "destination": "/api/router.php"
-    },
-    {
-      "source": "/start-session",
-      "destination": "/api/router.php"
-    }
-  ]
+  }
 }
