@@ -146,17 +146,12 @@ function StepRoom({
 
       {/* Invite link — always visible until partner joins */}
       {!partnerJoined && (
-        <>
-          <div className={styles.inviteBox}>
-            <span className={styles.inviteUrl}>{inviteUrl}</span>
-            <button className={styles.copyBtn} onClick={copyInvite}>
-              {copied ? '✓ Copied' : 'Copy'}
-            </button>
-          </div>
-          <button className={styles.btnSecondary} onClick={copyInvite}>
-            {copied ? '✓ Link copied!' : 'Invite MovieMate'}
+        <div className={styles.inviteBox}>
+          <span className={styles.inviteUrl}>{inviteUrl}</span>
+          <button className={styles.copyBtn} onClick={copyInvite}>
+            {copied ? '✓ Copied' : 'Copy link'}
           </button>
-        </>
+        </div>
       )}
 
       {partnerJoined && (
