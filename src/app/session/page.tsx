@@ -28,9 +28,12 @@ function StepName({ onDone }: {
     setLoading(true);
     setError('');
     try {
+      const formData = new FormData();
+      formData.append('name', trimmed);
       const res = await fetch('/start-session', {
         method: 'POST',
         headers: { Accept: 'application/json' },
+        body: formData,
       });
       if (!res.ok) throw new Error(`Server error: ${res.status}`);
       const data = await res.json();
