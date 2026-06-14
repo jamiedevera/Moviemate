@@ -1,9 +1,11 @@
 <?php
-// session-status.php — returns JSON about whether both sides finished for a session
+// session-status.php
 require_once __DIR__ . '/db.php';
 
 $sessionId = $_GET['session'] ?? '';
+
 header('Content-Type: application/json; charset=utf-8');
+header('Cache-Control: no-store');
 
 if (!$sessionId || !preg_match('/^[a-f0-9]{16}$/', $sessionId)) {
     http_response_code(400);
@@ -12,7 +14,7 @@ if (!$sessionId || !preg_match('/^[a-f0-9]{16}$/', $sessionId)) {
 }
 
 try {
-    $stmt = $pdo->prepare('SELECT a_movies, b_movies FROM sessions WHERE id = :id');
+    $stmt = $pdo->prepare('SELECT a_movies, b_movies, b_joined, b_name FROM sessions WHERE id = :id');
     $stmt->execute(['id' => $sessionId]);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -22,18 +24,23 @@ try {
         exit;
     }
 
-    $aPresent = !empty($row['a_movies']);
-    $bPresent = !empty($row['b_movies']);
-    $aCount = $aPresent ? count(json_decode($row['a_movies'], true)) : 0;
-    $bCount = $bPresent ? count(json_decode($row['b_movies'], true)) : 0;
+    $aPresent  = !empty($row['a_movies']);
+    $bPresent  = !empty($row['b_movies']);
+    $bJoined   = !empty($row['b_joined']);
+    $bName     = $row['b_name'] ?? '';
 
     echo json_encode([
+        'aJoined'  => true, // A always present if session exists
+        'bJoined'  => $bJoined,
+        'bName'    => $bName,
+        'aDone'    => $aPresent,
+        'bDone'    => $bPresent,
+        'bothDone' => ($aPresent && $bPresent),
+        // legacy keys
         'a_movies' => $aPresent,
         'b_movies' => $bPresent,
-        'a_count'  => $aCount,
-        'b_count'  => $bCount,
-        'bothDone' => ($aPresent && $bPresent),
     ]);
+
 } catch (PDOException $e) {
     error_log('session-status error: ' . $e->getMessage());
     http_response_code(500);
