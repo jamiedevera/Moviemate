@@ -194,6 +194,50 @@ $chooseUrl     = "/m/{$sessionId}/b";
     .btn:hover:not(:disabled) { background: #f40d1a; transform: translateY(-1px); }
     .btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
+    /* ── Seats row ── */
+    .seats-row {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      width: 100%;
+      margin: 0.5rem 0;
+    }
+
+    .seat {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 1.25rem 1rem;
+      border-radius: 12px;
+      border: 1px solid transparent;
+    }
+
+    .seat-filled {
+      background: rgba(229,9,20,0.08);
+      border-color: rgba(229,9,20,0.3);
+    }
+
+    .seat-animate {
+      animation: seatPop 0.4s cubic-bezier(0.22,1,0.36,1) 0.4s both;
+    }
+
+    @keyframes seatPop {
+      from { transform: scale(0.92); opacity: 0; }
+      to   { transform: scale(1);    opacity: 1; }
+    }
+
+    .seat-avatar { font-size: 2rem; line-height: 1; }
+    .seat-name   { font-size: 0.9rem; font-weight: 500; color: rgba(255,255,255,0.85); }
+    .seat-tag    { font-size: 0.7rem; color: rgba(255,255,255,0.35); }
+
+    .seat-heart {
+      font-size: 1.1rem;
+      flex-shrink: 0;
+      color: rgba(255,255,255,0.25);
+    }
+
     /* ── Theater arrival screen ── */
     .arrival-rows {
       display: flex;
@@ -283,31 +327,28 @@ $chooseUrl     = "/m/{$sessionId}/b";
   </button>
 </div>
 
-<!-- Screen 2: Theater arrival -->
+<!-- Screen 2: Both seated -->
 <div class="screen hidden" id="screenArrival">
   <span style="font-size:2.2rem">🎬</span>
-  <h1 style="font-size:1.4rem;font-weight:700;letter-spacing:-0.02em">The theater is ready.</h1>
+  <h1 style="font-size:1.4rem;font-weight:700;letter-spacing:-0.02em;margin-bottom:0.25rem">Both MovieMates have arrived.</h1>
+  <p style="font-size:0.9rem;color:rgba(255,255,255,0.45);margin-bottom:0.5rem">The theater is ready. Time to pick your movies.</p>
 
-  <div class="arrival-rows">
-    <div class="arrival-row" id="rowHost">
-      <span class="arrival-avatar">🍿</span>
-      <div class="arrival-text">
-        <div class="arrival-name"><?= $hostName ?></div>
-        <div class="arrival-sub">has entered the theater.</div>
-      </div>
+  <div class="seats-row">
+    <div class="seat seat-filled">
+      <div class="seat-avatar">🍿</div>
+      <div class="seat-name"><?= $hostName ?></div>
+      <div class="seat-tag">Seated</div>
     </div>
-    <div class="arrival-row" id="rowGuest">
-      <span class="arrival-avatar">🍿</span>
-      <div class="arrival-text">
-        <div class="arrival-name" id="guestNameDisplay">You</div>
-        <div class="arrival-sub">has entered the theater.</div>
-      </div>
+    <div class="seat-heart">❤️</div>
+    <div class="seat seat-filled seat-animate" id="guestSeat">
+      <div class="seat-avatar">🍿</div>
+      <div class="seat-name" id="guestNameDisplay">You</div>
+      <div class="seat-tag">Seated</div>
     </div>
   </div>
 
   <div class="arrival-cta" id="arrivalCta">
-    <p>Ready for the previews?</p>
-    <button class="btn" id="startBtn">Start Choosing</button>
+    <button class="btn" id="startBtn">Start Choosing Movies</button>
   </div>
 </div>
 
