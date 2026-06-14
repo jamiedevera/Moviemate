@@ -17,9 +17,11 @@ try {
 }
 
 // Insert into DB
+$aName = substr(trim($_POST['name'] ?? ''), 0, 40);
+
 try {
-    $stmt = $pdo->prepare('INSERT INTO sessions (id) VALUES (:id)');
-    $stmt->execute(['id' => $sessionId]);
+    $stmt = $pdo->prepare('INSERT INTO sessions (id, a_name) VALUES (:id, :a_name)');
+    $stmt->execute(['id' => $sessionId, 'a_name' => $aName ?: null]);
 } catch (PDOException $e) {
     error_log('Failed to create session: ' . $e->getMessage());
     $wantsJson = isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false;
