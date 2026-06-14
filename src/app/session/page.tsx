@@ -10,7 +10,7 @@ function buildInviteUrl(sessionId: string): string {
   return `${window.location.origin}/m/${sessionId}`;
 }
 
-// ── Step 1 — Name entry + session creation ────────────────────────────────────
+// ── Step 1 — Name + session creation ─────────────────────────────────────────
 function StepName({ onDone }: {
   onDone: (name: string, sessionId: string, chooseUrl: string, inviteUrl: string) => void
 }) {
@@ -73,7 +73,7 @@ function StepName({ onDone }: {
   );
 }
 
-// ── Step 2 — Host screening room ──────────────────────────────────────────────
+// ── Step 2 — Room ─────────────────────────────────────────────────────────────
 function StepRoom({
   name,
   sessionId,
@@ -88,7 +88,8 @@ function StepRoom({
   const [partnerJoined, setPartnerJoined] = useState(false);
   const [partnerName, setPartnerName] = useState('');
   const [copied, setCopied] = useState(false);
-  const [justJoined, setJustJoined] = useState(false);
+  const [showPartnerRow, setShowPartnerRow] = useState(false);
+  const [showCta, setShowCta] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const poll = useCallback(async () => {
@@ -97,16 +98,15 @@ function StepRoom({
       if (!res.ok) return;
       const data = await res.json();
       if (data?.bJoined || data?.bothDone) {
-        if (!partnerJoined) {
-          setPartnerName(data.bName || 'Your MovieMate');
-          setJustJoined(true);
-          setTimeout(() => setJustJoined(false), 2000);
-        }
+        setPartnerName(data.bName || 'Your MovieMate');
         setPartnerJoined(true);
         if (intervalRef.current) clearInterval(intervalRef.current);
+        // Stagger the arrivals
+        setTimeout(() => setShowPartnerRow(true), 500);
+        setTimeout(() => setShowCta(true), 1100);
       }
     } catch { /* silent retry */ }
-  }, [sessionId, partnerJoined]);
+  }, [sessionId]);
 
   useEffect(() => {
     poll();
@@ -136,7 +136,7 @@ function StepRoom({
           text: `${name} has reserved a private screening for you on MovieMate.`,
           url: inviteUrl,
         });
-      } catch { /* user cancelled */ }
+      } catch { /* cancelled */ }
     } else {
       copyInvite();
     }
@@ -147,75 +147,72 @@ function StepRoom({
     window.location.href = chooseUrl;
   }
 
-  return (
-    <div className={styles.step}>
-      {!partnerJoined ? (
-        <>
-          <span className={styles.stepIcon}>🎟️</span>
-          <h1 className={styles.heading}>Your private screening is ready</h1>
-          <p className={styles.sub}>Share this invite with your MovieMate and wait for them to enter the theater.</p>
+  // ── Waiting state ──
+  if (!partnerJoined) {
+    return (
+      <div className={styles.step}>
+        <span className={styles.stepIcon}>🎟️</span>
+        <h1 className={styles.heading}>Your private screening is ready</h1>
+        <p className={styles.sub}>Share this invite with your MovieMate and wait for them to enter the theater.</p>
 
-          {/* Seats */}
-          <div className={styles.room}>
-            <div className={`${styles.seat} ${styles.seatYou}`}>
-              <div className={styles.seatAvatar}>🍿</div>
-              <div className={styles.seatName}>{name}</div>
-              <div className={styles.seatTag}>Already seated</div>
-            </div>
-            <div className={styles.roomDivider}>···</div>
-            <div className={`${styles.seat} ${styles.seatPartnerWaiting}`}>
-              <div className={styles.seatAvatar}>💺</div>
-              <div className={styles.seatName}>Empty seat</div>
-              <div className={styles.seatTag}>Waiting…</div>
-            </div>
+        <div className={styles.room}>
+          <div className={`${styles.seat} ${styles.seatYou}`}>
+            <div className={styles.seatAvatar}>🍿</div>
+            <div className={styles.seatName}>{name}</div>
+            <div className={styles.seatTag}>Already seated</div>
           </div>
-
-          {/* Invite actions */}
-          <div className={styles.inviteSection}>
-            <p className={styles.inviteLabel}>📩 Invite your MovieMate</p>
-            <div className={styles.inviteBox}>
-              <span className={styles.inviteUrl}>{inviteUrl}</span>
-            </div>
-            <div className={styles.inviteActions}>
-              <button className={styles.btnInvite} onClick={copyInvite}>
-                {copied ? '✓ Copied!' : 'Copy Invite'}
-              </button>
-              <button className={styles.btnInviteSecondary} onClick={shareInvite}>
-                Share Invite
-              </button>
-            </div>
+          <div className={styles.roomDivider}>···</div>
+          <div className={`${styles.seat} ${styles.seatPartnerWaiting}`}>
+            <div className={styles.seatAvatar}>💺</div>
+            <div className={styles.seatName}>Empty seat</div>
+            <div className={styles.seatTag}>Waiting…</div>
           </div>
-        </>
-      ) : (
-        <>
-          <span className={styles.stepIcon}>🎬</span>
-          <h1 className={styles.heading}>The theater is ready.</h1>
+        </div>
 
-          <div className={styles.arrivalRows}>
-            <div className={`${styles.arrivalRow} ${styles.arrivalRowShow}`}>
-              <span className={styles.arrivalAvatar}>🍿</span>
-              <div className={styles.arrivalText}>
-                <div className={styles.arrivalName}>{name}</div>
-                <div className={styles.arrivalSub}>has entered the theater.</div>
-              </div>
-            </div>
-            <div className={`${styles.arrivalRow} ${justJoined ? styles.arrivalRowAnimate : styles.arrivalRowShow}`}>
-              <span className={styles.arrivalAvatar}>🍿</span>
-              <div className={styles.arrivalText}>
-                <div className={styles.arrivalName}>{partnerName || 'Your MovieMate'}</div>
-                <div className={styles.arrivalSub}>has entered the theater.</div>
-              </div>
-            </div>
+        <div className={styles.inviteSection}>
+          <p className={styles.inviteLabel}>📩 Invite your MovieMate</p>
+          <div className={styles.inviteBox}>
+            <span className={styles.inviteUrl}>{inviteUrl}</span>
           </div>
-
-          <div className={styles.arrivalCta}>
-            <p className={styles.arrivalCtaLabel}>Ready for the previews?</p>
-            <button className={styles.btn} onClick={handleProceed}>
-              Start Choosing
+          <div className={styles.inviteActions}>
+            <button className={styles.btnInvite} onClick={copyInvite}>
+              {copied ? '✓ Copied!' : 'Copy Invite'}
+            </button>
+            <button className={styles.btnInviteSecondary} onClick={shareInvite}>
+              Share Invite
             </button>
           </div>
-        </>
-      )}
+        </div>
+      </div>
+    );
+  }
+
+  // ── Arrived state ──
+  return (
+    <div className={styles.step}>
+      <span className={styles.stepIcon}>🎬</span>
+      <h1 className={styles.heading}>Both MovieMates have arrived.</h1>
+      <p className={styles.sub}>The theater is ready. Time to pick your movies.</p>
+
+      <div className={styles.room}>
+        <div className={`${styles.seat} ${styles.seatYou}`}>
+          <div className={styles.seatAvatar}>🍿</div>
+          <div className={styles.seatName}>{name}</div>
+          <div className={styles.seatTag}>Seated</div>
+        </div>
+        <div className={styles.roomDivider}>❤️</div>
+        <div className={`${styles.seat} ${styles.seatPartnerJoined} ${showPartnerRow ? styles.seatPartnerAnimate : ''}`}>
+          <div className={styles.seatAvatar}>🍿</div>
+          <div className={styles.seatName}>{partnerName || 'Your MovieMate'}</div>
+          <div className={styles.seatTag}>Seated</div>
+        </div>
+      </div>
+
+      <div className={`${styles.arrivalCta} ${showCta ? styles.arrivalCtaVisible : ''}`}>
+        <button className={styles.btn} onClick={handleProceed}>
+          Start Choosing Movies
+        </button>
+      </div>
     </div>
   );
 }
