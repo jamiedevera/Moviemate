@@ -188,28 +188,32 @@ function StepRoom({
         </>
       ) : (
         <>
-          <span className={styles.stepIcon}>{justJoined ? '🎉' : '🎬'}</span>
-          <h1 className={styles.heading}>Both MovieMates have arrived.</h1>
-          <p className={styles.sub}>The theater is ready. Time to pick your movies.</p>
+          <span className={styles.stepIcon}>🎬</span>
+          <h1 className={styles.heading}>The theater is ready.</h1>
 
-          {/* Both seated */}
-          <div className={styles.room}>
-            <div className={`${styles.seat} ${styles.seatYou}`}>
-              <div className={styles.seatAvatar}>🍿</div>
-              <div className={styles.seatName}>{name}</div>
-              <div className={styles.seatTag}>Seated</div>
+          <div className={styles.arrivalRows}>
+            <div className={`${styles.arrivalRow} ${styles.arrivalRowShow}`}>
+              <span className={styles.arrivalAvatar}>🍿</span>
+              <div className={styles.arrivalText}>
+                <div className={styles.arrivalName}>{name}</div>
+                <div className={styles.arrivalSub}>has entered the theater.</div>
+              </div>
             </div>
-            <div className={styles.roomDivider}>❤️</div>
-            <div className={`${styles.seat} ${styles.seatPartnerJoined}`}>
-              <div className={styles.seatAvatar}>🍿</div>
-              <div className={styles.seatName}>{partnerName || 'Your MovieMate'}</div>
-              <div className={styles.seatTag}>Seated</div>
+            <div className={`${styles.arrivalRow} ${justJoined ? styles.arrivalRowAnimate : styles.arrivalRowShow}`}>
+              <span className={styles.arrivalAvatar}>🍿</span>
+              <div className={styles.arrivalText}>
+                <div className={styles.arrivalName}>{partnerName || 'Your MovieMate'}</div>
+                <div className={styles.arrivalSub}>has entered the theater.</div>
+              </div>
             </div>
           </div>
 
-          <button className={styles.btn} onClick={handleProceed}>
-            Start Choosing Movies
-          </button>
+          <div className={styles.arrivalCta}>
+            <p className={styles.arrivalCtaLabel}>Ready for the previews?</p>
+            <button className={styles.btn} onClick={handleProceed}>
+              Start Choosing
+            </button>
+          </div>
         </>
       )}
     </div>
