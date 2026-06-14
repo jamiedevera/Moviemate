@@ -314,3 +314,72 @@
 .copyBtn:hover {
   background: rgba(229,9,20,0.25);
 }
+
+/* ── Invite section ───────────────────────────────────────────────────────── */
+.inviteSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.inviteLabel {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.45);
+  letter-spacing: 0.04em;
+  margin: 0;
+  text-align: left;
+}
+
+.inviteActions {
+  display: flex;
+  gap: 0.625rem;
+  width: 100%;
+}
+
+.btnInvite {
+  flex: 1;
+  padding: 0.8rem 1rem;
+  background: #e50914;
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-family: inherit;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+}
+
+.btnInvite:hover {
+  background: #f40d1a;
+  transform: translateY(-1px);
+}
+
+.btnInviteSecondary {
+  flex: 1;
+  padding: 0.8rem 1rem;
+  background: transparent;
+  color: rgba(255,255,255,0.7);
+  font-size: 0.9rem;
+  font-weight: 500;
+  font-family: inherit;
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
+
+.btnInviteSecondary:hover {
+  border-color: rgba(255,255,255,0.35);
+  color: #fff;
+  background: rgba(255,255,255,0.05);
+}
+
+/* ── Seat tag ─────────────────────────────────────────────────────────────── */
+.seatTag {
+  font-size: 0.7rem;
+  color: rgba(255,255,255,0.35);
+  letter-spacing: 0.04em;
+}
