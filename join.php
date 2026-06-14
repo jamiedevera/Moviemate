@@ -1,68 +1,46 @@
 <?php
-// join.php — entry point for Person B
 require_once __DIR__ . '/db.php';
 
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
-header('Cache-Control: post-check=0, pre-check=0', false);
 header('Pragma: no-cache');
-header('Expires: 0');
 
 $sessionId = $_GET['session'] ?? '';
 
-// Validate session id
 if (!$sessionId || !preg_match('/^[a-f0-9]{16}$/', $sessionId)) {
-    die('Invalid link');
+    die('Invalid link.');
 }
 
 try {
-    $stmt = $pdo->prepare('SELECT id, a_movies, b_movies FROM sessions WHERE id = :id');
+    $stmt = $pdo->prepare('SELECT id, a_movies, b_movies, a_name FROM sessions WHERE id = :id');
     $stmt->execute(['id' => $sessionId]);
     $session = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$session) die('Session not found. This link may be expired.');
 
-    if (!$session) {
-        die('Session not found. This link may be invalid or expired.');
-    }
-
-    $base = '';
-    if (isset($_SERVER['DOCUMENT_ROOT'])) {
-        $docRoot = str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT']);
-        $dir     = str_replace('\\', '/', __DIR__);
-        if (strpos(strtolower($dir), strtolower($docRoot)) === 0) {
-            $base = substr($dir, strlen($docRoot));
-        }
-    }
-    $base = rtrim($base, '/\\');
-
-    // If Person B already picked, go straight to match or waiting
+    // Already finished
     if (!empty($session['b_movies'])) {
         $bothDone = !empty($session['a_movies']);
-        if ($bothDone) {
-            header('Location: ' . $base . '/m/' . $sessionId . '/match');
-        } else {
-            header('Location: ' . $base . '/m/' . $sessionId . '/b');
-        }
+        header('Location: ' . ($bothDone ? "/m/{$sessionId}/match" : "/m/{$sessionId}/b"));
         exit;
     }
-
 } catch (PDOException $e) {
-    error_log('Database error in join.php: ' . $e->getMessage());
-    die('A database error occurred. Please try again.');
+    error_log('join.php error: ' . $e->getMessage());
+    die('A database error occurred.');
 }
 
-$chooseUrl = htmlspecialchars($base . '/m/' . $sessionId . '/b');
+$hostName     = htmlspecialchars($session['a_name'] ?? 'Your MovieMate');
 $sessionIdSafe = htmlspecialchars($sessionId);
+$chooseUrl    = "/m/{$sessionId}/b";
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Join MovieMate</title>
-  <link rel="stylesheet" href="/assets/global.css">
+  <title>You've been invited — MovieMate</title>
   <style>
-    /* ── Join page — cinematic name-entry ──────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      margin: 0;
       min-height: 100dvh;
       background: #0a0a0f;
       display: flex;
@@ -70,10 +48,10 @@ $sessionIdSafe = htmlspecialchars($sessionId);
       justify-content: center;
       font-family: system-ui, -apple-system, sans-serif;
       padding: 1.5rem;
-      box-sizing: border-box;
+      color: #f5f5f5;
     }
 
-    .join-card {
+    .card {
       width: 100%;
       max-width: 440px;
       display: flex;
@@ -81,7 +59,7 @@ $sessionIdSafe = htmlspecialchars($sessionId);
       align-items: center;
       gap: 1rem;
       text-align: center;
-      animation: fadeUp 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+      animation: fadeUp 0.4s cubic-bezier(0.22,1,0.36,1) both;
     }
 
     @keyframes fadeUp {
@@ -89,43 +67,65 @@ $sessionIdSafe = htmlspecialchars($sessionId);
       to   { opacity: 1; transform: translateY(0); }
     }
 
-    @media (prefers-reduced-motion: reduce) {
-      .join-card { animation: none; }
+    /* Ticket visual */
+    .ticket {
+      background: linear-gradient(135deg, #1a1a24, #13131c);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      padding: 1.75rem 2rem;
+      width: 100%;
+      position: relative;
+      overflow: hidden;
     }
 
-    .join-icon {
-      font-size: 2.4rem;
-      line-height: 1;
+    .ticket::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #e50914, #ff6b6b, #e50914);
     }
 
-    .join-heading {
-      font-size: 1.75rem;
-      font-weight: 600;
-      color: #f5f5f5;
+    .ticket-icon { font-size: 2.2rem; line-height: 1; margin-bottom: 0.75rem; display: block; }
+
+    .ticket-title {
+      font-size: 1.5rem;
+      font-weight: 700;
       letter-spacing: -0.02em;
-      line-height: 1.2;
-      margin: 0;
+      margin-bottom: 0.5rem;
     }
 
-    .join-sub {
-      font-size: 0.95rem;
-      color: rgba(255,255,255,0.48);
+    .ticket-host {
+      font-size: 0.9rem;
+      color: rgba(255,255,255,0.5);
       line-height: 1.6;
-      max-width: 320px;
-      margin: 0;
     }
 
-    .join-form {
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-      width: 100%;
-      margin-top: 0.5rem;
+    .ticket-host strong {
+      color: #fff;
+      font-weight: 600;
     }
 
-    .join-input {
+    /* Divider */
+    .divider {
       width: 100%;
-      box-sizing: border-box;
+      height: 1px;
+      background: rgba(255,255,255,0.08);
+      margin: 0.25rem 0;
+    }
+
+    /* Name input */
+    .input-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.35);
+      align-self: flex-start;
+    }
+
+    input[type="text"] {
+      width: 100%;
       padding: 0.875rem 1.125rem;
       background: rgba(255,255,255,0.06);
       border: 1px solid rgba(255,255,255,0.12);
@@ -137,78 +137,119 @@ $sessionIdSafe = htmlspecialchars($sessionId);
       transition: border-color 0.2s, background 0.2s;
     }
 
-    .join-input::placeholder {
-      color: rgba(255,255,255,0.28);
-    }
-
-    .join-input:focus {
+    input[type="text"]::placeholder { color: rgba(255,255,255,0.25); }
+    input[type="text"]:focus {
       border-color: rgba(229,9,20,0.6);
       background: rgba(255,255,255,0.09);
     }
 
-    .join-btn {
+    /* Submit button */
+    .btn {
       width: 100%;
-      padding: 0.875rem 1.5rem;
+      padding: 0.9rem 1.5rem;
       background: #e50914;
       color: #fff;
       font-size: 0.95rem;
-      font-weight: 600;
+      font-weight: 700;
       font-family: inherit;
       border: none;
       border-radius: 10px;
       cursor: pointer;
       transition: background 0.2s, transform 0.15s, opacity 0.2s;
+      letter-spacing: 0.01em;
     }
 
-    .join-btn:hover:not(:disabled) {
-      background: #f40d1a;
-      transform: translateY(-1px);
+    .btn:hover:not(:disabled) { background: #f40d1a; transform: translateY(-1px); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* Transition overlay */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: #0a0a0f;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease;
+      z-index: 100;
     }
 
-    .join-btn:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
+    .overlay.active { opacity: 1; pointer-events: all; }
+    .overlay-icon { font-size: 2.5rem; animation: pulse 1s ease-in-out infinite; }
+    .overlay-text { font-size: 1.1rem; font-weight: 500; color: rgba(255,255,255,0.7); }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50%       { transform: scale(1.1); }
     }
   </style>
 </head>
 <body>
-  <div class="join-card">
-    <span class="join-icon">🎟️</span>
-    <h1 class="join-heading">Let's get your name on the ticket</h1>
-    <p class="join-sub">We'll save your seat before the movie night begins.</p>
 
-    <form class="join-form" id="joinForm" action="<?= $chooseUrl ?>" method="get">
-      <input type="hidden" name="session" value="<?= $sessionIdSafe ?>">
-      <input
-        class="join-input"
-        type="text"
-        id="nameInput"
-        name="name"
-        placeholder="Enter your name"
-        maxlength="40"
-        autocomplete="off"
-        autofocus
-        required
-      >
-      <button class="join-btn" type="submit" id="joinBtn" disabled>
-        Continue
-      </button>
-    </form>
+  <!-- Cinematic transition overlay -->
+  <div class="overlay" id="overlay">
+    <span class="overlay-icon">🎬</span>
+    <p class="overlay-text">Taking your seat…</p>
+  </div>
+
+  <div class="card" id="card">
+    <!-- Ticket -->
+    <div class="ticket">
+      <span class="ticket-icon">🎟️</span>
+      <h1 class="ticket-title">You've been invited</h1>
+      <p class="ticket-host">
+        <strong><?= $hostName ?></strong> has reserved a private screening<br>
+        for you on MovieMate.
+      </p>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Name entry -->
+    <label class="input-label" for="nameInput">What's your name?</label>
+    <input
+      type="text"
+      id="nameInput"
+      placeholder="Enter your name"
+      maxlength="40"
+      autocomplete="off"
+      autofocus
+    >
+
+    <button class="btn" id="joinBtn" disabled>
+      Join <?= $hostName ?>'s Screening
+    </button>
   </div>
 
   <script>
-    const input = document.getElementById('nameInput');
-    const btn   = document.getElementById('joinBtn');
+    const input   = document.getElementById('nameInput');
+    const btn     = document.getElementById('joinBtn');
+    const overlay = document.getElementById('overlay');
 
     input.addEventListener('input', () => {
       btn.disabled = input.value.trim().length === 0;
     });
 
-    document.getElementById('joinForm').addEventListener('submit', function(e) {
+    btn.addEventListener('click', async () => {
       const name = input.value.trim();
-      if (!name) { e.preventDefault(); return; }
-      // Persist name for PHP pages that use ?name= param
+      if (!name) return;
+
+      btn.disabled = true;
       try { localStorage.setItem('mm_name', name); } catch(_) {}
+
+      // Save guest name via status endpoint if available, otherwise just proceed
+      // Show cinematic transition
+      overlay.classList.add('active');
+
+      // Short dramatic pause before redirecting
+      await new Promise(r => setTimeout(r, 1200));
+
+      const params = new URLSearchParams({ name });
+      window.location.href = '<?= $chooseUrl ?>?' + params.toString();
     });
   </script>
 </body>
