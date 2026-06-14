@@ -383,3 +383,78 @@
   color: rgba(255,255,255,0.35);
   letter-spacing: 0.04em;
 }
+
+/* ── Arrival rows (matched state) ─────────────────────────────────────────── */
+.arrivalRows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.arrivalRow {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 1rem 1.25rem;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  opacity: 0;
+  transform: translateX(-12px);
+}
+
+.arrivalRowShow {
+  opacity: 1;
+  transform: translateX(0);
+  transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.22,1,0.36,1);
+}
+
+.arrivalRowAnimate {
+  animation: slideIn 0.4s cubic-bezier(0.22,1,0.36,1) 0.5s both;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-12px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .arrivalRowAnimate { animation: none; opacity: 1; transform: none; }
+}
+
+.arrivalAvatar { font-size: 1.5rem; }
+
+.arrivalText { text-align: left; }
+
+.arrivalName {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #f5f5f5;
+}
+
+.arrivalSub {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.4);
+  margin-top: 0.1rem;
+}
+
+.arrivalCta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  animation: fadeInUp 0.4s ease 0.9s both;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.arrivalCtaLabel {
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.4);
+  margin: 0;
+}
