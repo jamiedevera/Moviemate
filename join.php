@@ -27,7 +27,7 @@ try {
     die('A database error occurred.');
 }
 
-$hostName     = htmlspecialchars($session['a_name'] ?? 'Your MovieMate');
+$hostName = htmlspecialchars($session['a_name'] ?? 'Your MovieMate');
 $sessionIdSafe = htmlspecialchars($sessionId);
 $chooseUrl    = "/m/{$sessionId}/b";
 ?>
