@@ -550,26 +550,12 @@ export default function Home() {
       {/* ── STATS ── */}
       <section className="py-20 bg-bg-dark border-t border-border-light">
         <div className="max-w-4xl mx-auto px-6">
-          <div className="grid grid-cols-3 gap-8 divide-x divide-border-light">
-            <StatItem
-              icon={<Film className="w-8 h-8" />}
-              value={stats?.movies ?? 0}
-              label="Movies Available"
-              suffix="+"
-              loading={statsLoading}
-            />
+          <div className="flex justify-center">
             <StatItem
               icon={<Users className="w-8 h-8" />}
               value={stats?.matches ?? 0}
               label="Matches Made"
               suffix="+"
-              loading={statsLoading}
-            />
-            <StatItem
-              icon={<Star className="w-8 h-8 fill-gold-accent/20" />}
-              value={stats?.satisfaction ?? 0}
-              label="Satisfaction Rate"
-              suffix="%"
               loading={statsLoading}
             />
           </div>
