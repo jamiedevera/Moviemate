@@ -1,6 +1,5 @@
-/* session.module.css — Cinematic dark theme for the 3-step session flow */
+/* session.module.css */
 
-/* ── Shell / full-screen wrapper ─────────────────────────────────────────── */
 .shell {
   position: relative;
   min-height: 100dvh;
@@ -13,7 +12,6 @@
   padding: 2rem 1rem;
 }
 
-/* Subtle film-grain texture via SVG noise (pure CSS, no image) */
 .grain {
   position: absolute;
   inset: 0;
@@ -23,7 +21,6 @@
   background-size: 200px 200px;
 }
 
-/* ── Step indicator dots ──────────────────────────────────────────────────── */
 .dots {
   position: absolute;
   top: 2rem;
@@ -37,8 +34,8 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.18);
-  transition: background 0.3s ease, transform 0.3s ease;
+  background: rgba(255,255,255,0.18);
+  transition: background 0.3s, transform 0.3s;
 }
 
 .dotActive {
@@ -46,36 +43,23 @@
   transform: scale(1.3);
 }
 
-/* ── Card (the animated container) ───────────────────────────────────────── */
 .card {
   width: 100%;
   max-width: 480px;
   will-change: opacity, transform;
 }
 
-.cardIn {
-  animation: stepIn 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
+.cardIn  { animation: stepIn  0.32s cubic-bezier(0.22,1,0.36,1) both; }
+.cardOut { animation: stepOut 0.28s ease-in both; }
 
-.cardOut {
-  animation: stepOut 0.28s ease-in both;
-}
-
-@keyframes stepIn {
-  from { opacity: 0; transform: translateY(18px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes stepOut {
-  from { opacity: 1; transform: translateY(0); }
-  to   { opacity: 0; transform: translateY(-12px); }
-}
+@keyframes stepIn  { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:translateY(0); } }
+@keyframes stepOut { from { opacity:1; transform:translateY(0); } to { opacity:0; transform:translateY(-12px); } }
 
 @media (prefers-reduced-motion: reduce) {
   .cardIn, .cardOut { animation: none; }
 }
 
-/* ── Step inner layout ────────────────────────────────────────────────────── */
+/* ── Step layout ── */
 .step {
   display: flex;
   flex-direction: column;
@@ -84,11 +68,7 @@
   text-align: center;
 }
 
-.stepIcon {
-  font-size: 2.4rem;
-  line-height: 1;
-  margin-bottom: 0.25rem;
-}
+.stepIcon { font-size: 2.4rem; line-height: 1; margin-bottom: 0.25rem; }
 
 .heading {
   font-size: 1.75rem;
@@ -101,13 +81,13 @@
 
 .sub {
   font-size: 0.95rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255,255,255,0.5);
   max-width: 340px;
   line-height: 1.6;
   margin: 0;
 }
 
-/* ── Form ─────────────────────────────────────────────────────────────────── */
+/* ── Form ── */
 .form {
   display: flex;
   flex-direction: column;
@@ -120,26 +100,19 @@
   width: 100%;
   box-sizing: border-box;
   padding: 0.875rem 1.125rem;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
   border-radius: 10px;
   color: #f5f5f5;
   font-size: 1rem;
   font-family: inherit;
   outline: none;
-  transition: border-color 0.2s ease, background 0.2s ease;
+  transition: border-color 0.2s, background 0.2s;
 }
+.input::placeholder { color: rgba(255,255,255,0.28); }
+.input:focus { border-color: rgba(229,9,20,0.6); background: rgba(255,255,255,0.09); }
 
-.input::placeholder {
-  color: rgba(255, 255, 255, 0.28);
-}
-
-.input:focus {
-  border-color: rgba(229, 9, 20, 0.6);
-  background: rgba(255, 255, 255, 0.09);
-}
-
-/* ── Buttons ──────────────────────────────────────────────────────────────── */
+/* ── Buttons ── */
 .btn {
   width: 100%;
   padding: 0.875rem 1.5rem;
@@ -151,49 +124,33 @@
   border: none;
   border-radius: 10px;
   cursor: pointer;
-  transition: background 0.2s ease, opacity 0.2s ease, transform 0.15s ease;
+  transition: background 0.2s, transform 0.15s, opacity 0.2s;
 }
-
-.btn:hover:not(:disabled) {
-  background: #f40d1a;
-  transform: translateY(-1px);
-}
-
-.btn:active:not(:disabled) {
-  transform: translateY(0);
-}
-
-.btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
+.btn:hover:not(:disabled) { background: #f40d1a; transform: translateY(-1px); }
+.btn:active:not(:disabled) { transform: translateY(0); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .btnSecondary {
   width: 100%;
   padding: 0.875rem 1.5rem;
   background: transparent;
-  color: rgba(255, 255, 255, 0.75);
+  color: rgba(255,255,255,0.75);
   font-size: 0.95rem;
   font-weight: 500;
   font-family: inherit;
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255,255,255,0.18);
   border-radius: 10px;
   cursor: pointer;
-  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
 }
+.btnSecondary:hover { border-color: rgba(255,255,255,0.35); color: #fff; background: rgba(255,255,255,0.05); }
 
-.btnSecondary:hover {
-  border-color: rgba(255, 255, 255, 0.35);
-  color: #fff;
-  background: rgba(255, 255, 255, 0.05);
-}
-
-/* ── Error message ────────────────────────────────────────────────────────── */
+/* ── Error ── */
 .error {
   font-size: 0.875rem;
   color: #ff6b6b;
-  background: rgba(229, 9, 20, 0.1);
-  border: 1px solid rgba(229, 9, 20, 0.25);
+  background: rgba(229,9,20,0.1);
+  border: 1px solid rgba(229,9,20,0.25);
   border-radius: 8px;
   padding: 0.625rem 1rem;
   width: 100%;
@@ -201,7 +158,7 @@
   margin: 0;
 }
 
-/* ── Room layout (Step 3) ─────────────────────────────────────────────────── */
+/* ── Waiting room (seats) ── */
 .room {
   display: flex;
   align-items: center;
@@ -215,66 +172,45 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
   padding: 1.25rem 1rem;
   border-radius: 12px;
   border: 1px solid transparent;
-  transition: border-color 0.4s ease, background 0.4s ease;
+  transition: border-color 0.4s, background 0.4s;
 }
 
-.seatYou {
-  background: rgba(229, 9, 20, 0.08);
-  border-color: rgba(229, 9, 20, 0.3);
-}
+.seatYou            { background: rgba(229,9,20,0.08); border-color: rgba(229,9,20,0.3); }
+.seatPartnerWaiting { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.1); }
+.seatPartnerJoined  { background: rgba(229,9,20,0.08); border-color: rgba(229,9,20,0.3); }
 
-.seatPartnerWaiting {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-.seatPartnerJoined {
-  background: rgba(229, 9, 20, 0.08);
-  border-color: rgba(229, 9, 20, 0.3);
-  animation: seatPop 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-@keyframes seatPop {
-  from { transform: scale(0.92); opacity: 0; }
-  to   { transform: scale(1);    opacity: 1; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .seatPartnerJoined { animation: none; }
-}
-
-.seatAvatar {
-  font-size: 2rem;
-  line-height: 1;
-}
-
-.seatLabel {
-  font-size: 0.7rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.3);
-}
-
-.seatName {
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.75);
-}
+.seatAvatar { font-size: 2rem; line-height: 1; }
+.seatName   { font-size: 0.9rem; font-weight: 500; color: rgba(255,255,255,0.75); }
+.seatTag    { font-size: 0.7rem; color: rgba(255,255,255,0.35); letter-spacing: 0.04em; }
 
 .roomDivider {
   font-size: 1.1rem;
-  color: rgba(255, 255, 255, 0.25);
+  color: rgba(255,255,255,0.25);
   flex-shrink: 0;
   letter-spacing: 0.15em;
-  transition: color 0.4s ease;
 }
 
-/* ── Invite link box (Step 3) ─────────────────────────────────────────────── */
+/* ── Invite section ── */
+.inviteSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.inviteLabel {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.45);
+  letter-spacing: 0.04em;
+  margin: 0;
+  text-align: left;
+}
+
 .inviteBox {
   display: flex;
   align-items: center;
@@ -297,41 +233,6 @@
   font-family: monospace;
 }
 
-.copyBtn {
-  flex-shrink: 0;
-  padding: 0.35rem 0.75rem;
-  background: rgba(229,9,20,0.15);
-  border: 1px solid rgba(229,9,20,0.4);
-  border-radius: 6px;
-  color: #e50914;
-  font-size: 0.78rem;
-  font-weight: 600;
-  font-family: inherit;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.copyBtn:hover {
-  background: rgba(229,9,20,0.25);
-}
-
-/* ── Invite section ───────────────────────────────────────────────────────── */
-.inviteSection {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  width: 100%;
-}
-
-.inviteLabel {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: rgba(255,255,255,0.45);
-  letter-spacing: 0.04em;
-  margin: 0;
-  text-align: left;
-}
-
 .inviteActions {
   display: flex;
   gap: 0.625rem;
@@ -351,11 +252,7 @@
   cursor: pointer;
   transition: background 0.2s, transform 0.15s;
 }
-
-.btnInvite:hover {
-  background: #f40d1a;
-  transform: translateY(-1px);
-}
+.btnInvite:hover { background: #f40d1a; transform: translateY(-1px); }
 
 .btnInviteSecondary {
   flex: 1;
@@ -370,21 +267,9 @@
   cursor: pointer;
   transition: border-color 0.2s, color 0.2s, background 0.2s;
 }
+.btnInviteSecondary:hover { border-color: rgba(255,255,255,0.35); color: #fff; background: rgba(255,255,255,0.05); }
 
-.btnInviteSecondary:hover {
-  border-color: rgba(255,255,255,0.35);
-  color: #fff;
-  background: rgba(255,255,255,0.05);
-}
-
-/* ── Seat tag ─────────────────────────────────────────────────────────────── */
-.seatTag {
-  font-size: 0.7rem;
-  color: rgba(255,255,255,0.35);
-  letter-spacing: 0.04em;
-}
-
-/* ── Arrival rows (matched state) ─────────────────────────────────────────── */
+/* ── Arrival rows ── */
 .arrivalRows {
   display: flex;
   flex-direction: column;
@@ -402,28 +287,15 @@
   border-radius: 12px;
   opacity: 0;
   transform: translateX(-12px);
-}
-
-.arrivalRowShow {
-  opacity: 1;
-  transform: translateX(0);
   transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.22,1,0.36,1);
 }
 
-.arrivalRowAnimate {
-  animation: slideIn 0.4s cubic-bezier(0.22,1,0.36,1) 0.5s both;
+.arrivalRowVisible {
+  opacity: 1;
+  transform: translateX(0);
 }
 
-@keyframes slideIn {
-  from { opacity: 0; transform: translateX(-12px); }
-  to   { opacity: 1; transform: translateX(0); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .arrivalRowAnimate { animation: none; opacity: 1; transform: none; }
-}
-
-.arrivalAvatar { font-size: 1.5rem; }
+.arrivalAvatar { font-size: 1.5rem; flex-shrink: 0; }
 
 .arrivalText { text-align: left; }
 
@@ -445,16 +317,32 @@
   align-items: center;
   gap: 0.5rem;
   width: 100%;
-  animation: fadeInUp 0.4s ease 0.9s both;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
 }
 
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
+.arrivalCtaVisible {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .arrivalCtaLabel {
   font-size: 0.85rem;
   color: rgba(255,255,255,0.4);
   margin: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .arrivalRow, .arrivalCta { transition: none; }
+  .arrivalRowVisible, .arrivalCtaVisible { opacity: 1; transform: none; }
+}
+
+.seatPartnerAnimate {
+  animation: seatPop 0.4s cubic-bezier(0.22,1,0.36,1) 0.4s both;
+}
+
+@keyframes seatPop {
+  from { transform: scale(0.92); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
 }
