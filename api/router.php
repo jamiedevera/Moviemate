@@ -99,6 +99,13 @@ if (preg_match('#^/m/([a-f0-9]{16})/status/?$#', $path, $matches)) {
     return true;
 }
 
+// /m/<session>/join-b
+if (preg_match('#^/m/([a-f0-9]{16})/join-b/?$#', $path, $matches)) {
+    $_GET['session'] = $matches[1];
+    require $rootDir . '/join-b.php';
+    return true;
+}
+
 // /start-session
 if ($path === '/start-session' || $path === '/start-session/' || $path === '/start-session.php') {
     require $rootDir . '/start-session.php';
