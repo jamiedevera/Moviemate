@@ -336,6 +336,15 @@ $chooseUrl     = "/m/{$sessionId}/b";
     try { localStorage.setItem('mm_name', name); } catch(_) {}
     guestDisplay.textContent = name;
 
+    // Mark b_joined in DB so host polling detects the join
+    try {
+      await fetch('/m/<?= $sessionIdSafe ?>/join-b', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name }),
+      });
+    } catch(_) {}
+
     // Cinematic flash transition
     flash.classList.add('active');
     await sleep(250);
