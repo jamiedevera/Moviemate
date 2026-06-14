@@ -5,20 +5,15 @@ header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 header('Pragma: no-cache');
 
 $sessionId = $_GET['session'] ?? '';
-
-if (!$sessionId || !preg_match('/^[a-f0-9]{16}$/', $sessionId)) {
-    die('Invalid link.');
-}
+if (!$sessionId || !preg_match('/^[a-f0-9]{16}$/', $sessionId)) { die('Invalid link.'); }
 
 try {
     $stmt = $pdo->prepare('SELECT id, a_movies, b_movies, a_name FROM sessions WHERE id = :id');
     $stmt->execute(['id' => $sessionId]);
     $session = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$session) die('Session not found. This link may be expired.');
-
     if (!empty($session['b_movies'])) {
-        $bothDone = !empty($session['a_movies']);
-        header('Location: ' . ($bothDone ? "/m/{$sessionId}/match" : "/m/{$sessionId}/b"));
+        header('Location: ' . (!empty($session['a_movies']) ? "/m/{$sessionId}/match" : "/m/{$sessionId}/b"));
         exit;
     }
 } catch (PDOException $e) {
@@ -46,40 +41,75 @@ $chooseUrl     = "/m/{$sessionId}/b";
       align-items: center;
       justify-content: center;
       font-family: system-ui, -apple-system, sans-serif;
-      padding: 1.5rem;
+      padding: 2rem 1rem;
       color: #f5f5f5;
       overflow: hidden;
     }
 
+    /* Grain — matches Next.js shell */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.035;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-size: 200px 200px;
+      z-index: 0;
+    }
+
+    .shell {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 480px;
+    }
+
     /* ── Screens ── */
     .screen {
-      width: 100%;
-      max-width: 440px;
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 1rem;
       text-align: center;
-      position: absolute;
-      transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.22,1,0.36,1);
+      transition: opacity 0.32s ease, transform 0.32s cubic-bezier(0.22,1,0.36,1);
     }
 
     .screen.hidden {
       opacity: 0;
       pointer-events: none;
-      transform: translateY(16px);
+      transform: translateY(-12px);
+      position: absolute;
+      width: 100%;
     }
 
     .screen.visible {
       opacity: 1;
-      pointer-events: all;
       transform: translateY(0);
-      animation: fadeUp 0.4s cubic-bezier(0.22,1,0.36,1) both;
+      animation: stepIn 0.32s cubic-bezier(0.22,1,0.36,1) both;
     }
 
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(20px); }
+    @keyframes stepIn {
+      from { opacity: 0; transform: translateY(18px); }
       to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Typography — matches session page ── */
+    .step-icon { font-size: 2.4rem; line-height: 1; margin-bottom: 0.25rem; }
+
+    .heading {
+      font-size: 1.75rem;
+      font-weight: 600;
+      color: #f5f5f5;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+    }
+
+    .sub {
+      font-size: 0.95rem;
+      color: rgba(255,255,255,0.5);
+      max-width: 340px;
+      line-height: 1.6;
     }
 
     /* ── Ticket card ── */
@@ -101,29 +131,18 @@ $chooseUrl     = "/m/{$sessionId}/b";
       background: linear-gradient(90deg, #e50914, #ff6b6b, #e50914);
     }
 
-    /* Tear line */
     .ticket-tear {
       width: 100%;
       height: 1px;
-      background: repeating-linear-gradient(
-        90deg,
-        rgba(255,255,255,0.12) 0px,
-        rgba(255,255,255,0.12) 6px,
-        transparent 6px,
-        transparent 12px
-      );
+      background: repeating-linear-gradient(90deg,rgba(255,255,255,0.12) 0px,rgba(255,255,255,0.12) 6px,transparent 6px,transparent 12px);
       margin: 1.25rem 0;
       position: relative;
     }
-
-    .ticket-tear::before,
-    .ticket-tear::after {
+    .ticket-tear::before, .ticket-tear::after {
       content: '';
       position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 14px;
-      height: 14px;
+      top: 50%; transform: translateY(-50%);
+      width: 14px; height: 14px;
       border-radius: 50%;
       background: #0a0a0f;
       border: 1px solid rgba(255,255,255,0.1);
@@ -131,7 +150,6 @@ $chooseUrl     = "/m/{$sessionId}/b";
     .ticket-tear::before { left: -20px; }
     .ticket-tear::after  { right: -20px; }
 
-    .ticket-icon { font-size: 2.2rem; line-height: 1; margin-bottom: 0.75rem; display: block; }
     .ticket-eyebrow {
       font-size: 0.65rem;
       font-weight: 700;
@@ -140,17 +158,6 @@ $chooseUrl     = "/m/{$sessionId}/b";
       color: #e50914;
       margin-bottom: 0.5rem;
     }
-    .ticket-title {
-      font-size: 1.4rem;
-      font-weight: 700;
-      letter-spacing: -0.02em;
-      line-height: 1.3;
-    }
-    .ticket-host {
-      font-size: 0.85rem;
-      color: rgba(255,255,255,0.45);
-      margin-top: 0.4rem;
-    }
     .ticket-stub {
       font-size: 0.7rem;
       color: rgba(255,255,255,0.25);
@@ -158,7 +165,7 @@ $chooseUrl     = "/m/{$sessionId}/b";
       text-transform: uppercase;
     }
 
-    /* ── Inputs ── */
+    /* ── Input ── */
     input[type="text"] {
       width: 100%;
       padding: 0.875rem 1.125rem;
@@ -172,19 +179,16 @@ $chooseUrl     = "/m/{$sessionId}/b";
       transition: border-color 0.2s, background 0.2s;
     }
     input[type="text"]::placeholder { color: rgba(255,255,255,0.25); }
-    input[type="text"]:focus {
-      border-color: rgba(229,9,20,0.6);
-      background: rgba(255,255,255,0.09);
-    }
+    input[type="text"]:focus { border-color: rgba(229,9,20,0.6); background: rgba(255,255,255,0.09); }
 
-    /* ── Buttons ── */
+    /* ── Button ── */
     .btn {
       width: 100%;
-      padding: 0.9rem 1.5rem;
+      padding: 0.875rem 1.5rem;
       background: #e50914;
       color: #fff;
       font-size: 0.95rem;
-      font-weight: 700;
+      font-weight: 600;
       font-family: inherit;
       border: none;
       border-radius: 10px;
@@ -194,13 +198,13 @@ $chooseUrl     = "/m/{$sessionId}/b";
     .btn:hover:not(:disabled) { background: #f40d1a; transform: translateY(-1px); }
     .btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-    /* ── Seats row ── */
-    .seats-row {
+    /* ── Seats — identical to session page ── */
+    .room {
       display: flex;
       align-items: center;
       gap: 1.25rem;
+      margin: 0.75rem 0;
       width: 100%;
-      margin: 0.5rem 0;
     }
 
     .seat {
@@ -211,15 +215,11 @@ $chooseUrl     = "/m/{$sessionId}/b";
       gap: 0.4rem;
       padding: 1.25rem 1rem;
       border-radius: 12px;
-      border: 1px solid transparent;
-    }
-
-    .seat-filled {
+      border: 1px solid rgba(229,9,20,0.3);
       background: rgba(229,9,20,0.08);
-      border-color: rgba(229,9,20,0.3);
     }
 
-    .seat-animate {
+    .seat-guest {
       animation: seatPop 0.4s cubic-bezier(0.22,1,0.36,1) 0.4s both;
     }
 
@@ -232,67 +232,28 @@ $chooseUrl     = "/m/{$sessionId}/b";
     .seat-name   { font-size: 0.9rem; font-weight: 500; color: rgba(255,255,255,0.85); }
     .seat-tag    { font-size: 0.7rem; color: rgba(255,255,255,0.35); }
 
-    .seat-heart {
-      font-size: 1.1rem;
-      flex-shrink: 0;
-      color: rgba(255,255,255,0.25);
-    }
+    .room-divider { font-size: 1.1rem; flex-shrink: 0; }
 
-    /* ── Theater arrival screen ── */
-    .arrival-rows {
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-      width: 100%;
-    }
-
-    .arrival-row {
-      display: flex;
-      align-items: center;
-      gap: 0.875rem;
-      padding: 1rem 1.25rem;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 12px;
-      opacity: 0;
-      transform: translateX(-12px);
-      transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.22,1,0.36,1);
-    }
-
-    .arrival-row.show {
-      opacity: 1;
-      transform: translateX(0);
-    }
-
-    .arrival-avatar { font-size: 1.5rem; }
-    .arrival-text { text-align: left; }
-    .arrival-name { font-size: 0.95rem; font-weight: 600; color: #f5f5f5; }
-    .arrival-sub  { font-size: 0.75rem; color: rgba(255,255,255,0.4); margin-top: 0.1rem; }
-
+    /* ── CTA fade in ── */
     .arrival-cta {
+      width: 100%;
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 0.5rem;
-      width: 100%;
-      opacity: 0;
-      transform: translateY(8px);
-      transition: opacity 0.4s ease 0.6s, transform 0.4s ease 0.6s;
-    }
-    .arrival-cta.show { opacity: 1; transform: translateY(0); }
-    .arrival-cta p {
-      font-size: 0.85rem;
-      color: rgba(255,255,255,0.4);
-      margin-bottom: 0.25rem;
+      animation: fadeInUp 0.4s ease 0.85s both;
     }
 
-    /* ── Cinematic flash overlay ── */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Flash ── */
     .flash {
-      position: fixed;
-      inset: 0;
+      position: fixed; inset: 0;
       background: #0a0a0f;
-      opacity: 0;
-      pointer-events: none;
+      opacity: 0; pointer-events: none;
       z-index: 200;
       transition: opacity 0.25s ease;
     }
@@ -300,70 +261,60 @@ $chooseUrl     = "/m/{$sessionId}/b";
   </style>
 </head>
 <body>
-
 <div class="flash" id="flash"></div>
 
-<!-- Screen 1: Ticket + name entry -->
-<div class="screen visible" id="screenTicket">
-  <div class="ticket">
-    <span class="ticket-icon">🎟️</span>
-    <p class="ticket-eyebrow">Movie Ticket</p>
-    <h1 class="ticket-title"><?= $hostName ?> invited you to a MovieMate screening.</h1>
-    <div class="ticket-tear"></div>
-    <p class="ticket-stub">One admit — present this ticket at the door</p>
+<div class="shell">
+
+  <!-- Screen 1: Ticket -->
+  <div class="screen visible" id="screenTicket">
+    <div class="ticket">
+      <span class="step-icon">🎟️</span>
+      <p class="ticket-eyebrow">Movie Ticket</p>
+      <h1 class="heading"><?= $hostName ?> invited you to a MovieMate screening.</h1>
+      <div class="ticket-tear"></div>
+      <p class="ticket-stub">One admit — present this ticket at the door</p>
+    </div>
+
+    <input type="text" id="nameInput" placeholder="What's your name?" maxlength="40" autocomplete="off" autofocus>
+    <button class="btn" id="joinBtn" disabled>Join <?= $hostName ?>'s Screening</button>
   </div>
 
-  <input
-    type="text"
-    id="nameInput"
-    placeholder="What's your name?"
-    maxlength="40"
-    autocomplete="off"
-    autofocus
-  >
+  <!-- Screen 2: Both seated -->
+  <div class="screen hidden" id="screenArrival">
+    <span class="step-icon">🎬</span>
+    <h1 class="heading">Both MovieMates have arrived.</h1>
+    <p class="sub">The theater is ready. Time to pick your movies.</p>
 
-  <button class="btn" id="joinBtn" disabled>
-    Join <?= $hostName ?>'s Screening
-  </button>
-</div>
-
-<!-- Screen 2: Both seated -->
-<div class="screen hidden" id="screenArrival">
-  <span style="font-size:2.2rem">🎬</span>
-  <h1 style="font-size:1.4rem;font-weight:700;letter-spacing:-0.02em;margin-bottom:0.25rem">Both MovieMates have arrived.</h1>
-  <p style="font-size:0.9rem;color:rgba(255,255,255,0.45);margin-bottom:0.5rem">The theater is ready. Time to pick your movies.</p>
-
-  <div class="seats-row">
-    <div class="seat seat-filled">
-      <div class="seat-avatar">🍿</div>
-      <div class="seat-name"><?= $hostName ?></div>
-      <div class="seat-tag">Seated</div>
+    <div class="room">
+      <div class="seat">
+        <div class="seat-avatar">🍿</div>
+        <div class="seat-name"><?= $hostName ?></div>
+        <div class="seat-tag">Seated</div>
+      </div>
+      <div class="room-divider">❤️</div>
+      <div class="seat seat-guest">
+        <div class="seat-avatar">🍿</div>
+        <div class="seat-name" id="guestNameDisplay">You</div>
+        <div class="seat-tag">Seated</div>
+      </div>
     </div>
-    <div class="seat-heart">❤️</div>
-    <div class="seat seat-filled seat-animate" id="guestSeat">
-      <div class="seat-avatar">🍿</div>
-      <div class="seat-name" id="guestNameDisplay">You</div>
-      <div class="seat-tag">Seated</div>
+
+    <div class="arrival-cta">
+      <button class="btn" id="startBtn">Start Choosing Movies</button>
     </div>
   </div>
 
-  <div class="arrival-cta" id="arrivalCta">
-    <button class="btn" id="startBtn">Start Choosing Movies</button>
-  </div>
-</div>
+</div><!-- /.shell -->
 
 <script>
-  const input      = document.getElementById('nameInput');
-  const joinBtn    = document.getElementById('joinBtn');
-  const flash      = document.getElementById('flash');
-  const screen1    = document.getElementById('screenTicket');
-  const screen2    = document.getElementById('screenArrival');
-  const rowHost    = document.getElementById('rowHost');
-  const rowGuest   = document.getElementById('rowGuest');
-  const arrivalCta = document.getElementById('arrivalCta');
+  const input    = document.getElementById('nameInput');
+  const joinBtn  = document.getElementById('joinBtn');
+  const flash    = document.getElementById('flash');
+  const screen1  = document.getElementById('screenTicket');
+  const screen2  = document.getElementById('screenArrival');
   const guestDisplay = document.getElementById('guestNameDisplay');
-  const startBtn   = document.getElementById('startBtn');
-  const chooseUrl  = '<?= $chooseUrl ?>';
+  const startBtn = document.getElementById('startBtn');
+  const chooseUrl = '<?= $chooseUrl ?>';
 
   input.addEventListener('input', () => {
     joinBtn.disabled = input.value.trim().length === 0;
@@ -373,11 +324,10 @@ $chooseUrl     = "/m/{$sessionId}/b";
     const name = input.value.trim();
     if (!name) return;
     joinBtn.disabled = true;
-
-    try { localStorage.setItem('mm_name', name); } catch(_) {}
     guestDisplay.textContent = name;
+    try { localStorage.setItem('mm_name', name); } catch(_) {}
 
-    // Mark b_joined in DB so host polling detects the join
+    // Notify DB so host polling picks up the join
     try {
       await fetch('/m/<?= $sessionIdSafe ?>/join-b', {
         method: 'POST',
@@ -386,31 +336,17 @@ $chooseUrl     = "/m/{$sessionId}/b";
       });
     } catch(_) {}
 
-    // Cinematic flash transition
+    // Cinematic flash
     flash.classList.add('active');
     await sleep(250);
-
-    // Switch screens
-    screen1.classList.remove('visible');
-    screen1.classList.add('hidden');
-    screen2.classList.remove('hidden');
-    screen2.classList.add('visible');
-
+    screen1.classList.remove('visible'); screen1.classList.add('hidden');
+    screen2.classList.remove('hidden');  screen2.classList.add('visible');
     flash.classList.remove('active');
-
-    // Staggered arrivals
-    await sleep(300);
-    rowHost.classList.add('show');
-    await sleep(500);
-    rowGuest.classList.add('show');
-    await sleep(600);
-    arrivalCta.classList.add('show');
   });
 
   startBtn.addEventListener('click', () => {
     const name = input.value.trim() || localStorage.getItem('mm_name') || '';
-    const params = new URLSearchParams({ name });
-    window.location.href = chooseUrl + '?' + params.toString();
+    window.location.href = chooseUrl + '?name=' + encodeURIComponent(name);
   });
 
   function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
