@@ -16,7 +16,6 @@ try {
     $session = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$session) die('Session not found. This link may be expired.');
 
-    // Already finished
     if (!empty($session['b_movies'])) {
         $bothDone = !empty($session['a_movies']);
         header('Location: ' . ($bothDone ? "/m/{$sessionId}/match" : "/m/{$sessionId}/b"));
@@ -27,16 +26,16 @@ try {
     die('A database error occurred.');
 }
 
-$hostName = htmlspecialchars($session['a_name'] ?? 'Your MovieMate');
+$hostName      = htmlspecialchars($session['a_name'] ?? 'Your MovieMate');
 $sessionIdSafe = htmlspecialchars($sessionId);
-$chooseUrl    = "/m/{$sessionId}/b";
+$chooseUrl     = "/m/{$sessionId}/b";
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>You've been invited — MovieMate</title>
+  <title>Movie Ticket — MovieMate</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -49,9 +48,11 @@ $chooseUrl    = "/m/{$sessionId}/b";
       font-family: system-ui, -apple-system, sans-serif;
       padding: 1.5rem;
       color: #f5f5f5;
+      overflow: hidden;
     }
 
-    .card {
+    /* ── Screens ── */
+    .screen {
       width: 100%;
       max-width: 440px;
       display: flex;
@@ -59,6 +60,20 @@ $chooseUrl    = "/m/{$sessionId}/b";
       align-items: center;
       gap: 1rem;
       text-align: center;
+      position: absolute;
+      transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.22,1,0.36,1);
+    }
+
+    .screen.hidden {
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(16px);
+    }
+
+    .screen.visible {
+      opacity: 1;
+      pointer-events: all;
+      transform: translateY(0);
       animation: fadeUp 0.4s cubic-bezier(0.22,1,0.36,1) both;
     }
 
@@ -67,12 +82,12 @@ $chooseUrl    = "/m/{$sessionId}/b";
       to   { opacity: 1; transform: translateY(0); }
     }
 
-    /* Ticket visual */
+    /* ── Ticket card ── */
     .ticket {
       background: linear-gradient(135deg, #1a1a24, #13131c);
       border: 1px solid rgba(255,255,255,0.1);
       border-radius: 16px;
-      padding: 1.75rem 2rem;
+      padding: 2rem;
       width: 100%;
       position: relative;
       overflow: hidden;
@@ -86,44 +101,64 @@ $chooseUrl    = "/m/{$sessionId}/b";
       background: linear-gradient(90deg, #e50914, #ff6b6b, #e50914);
     }
 
-    .ticket-icon { font-size: 2.2rem; line-height: 1; margin-bottom: 0.75rem; display: block; }
-
-    .ticket-title {
-      font-size: 1.5rem;
-      font-weight: 700;
-      letter-spacing: -0.02em;
-      margin-bottom: 0.5rem;
-    }
-
-    .ticket-host {
-      font-size: 0.9rem;
-      color: rgba(255,255,255,0.5);
-      line-height: 1.6;
-    }
-
-    .ticket-host strong {
-      color: #fff;
-      font-weight: 600;
-    }
-
-    /* Divider */
-    .divider {
+    /* Tear line */
+    .ticket-tear {
       width: 100%;
       height: 1px;
-      background: rgba(255,255,255,0.08);
-      margin: 0.25rem 0;
+      background: repeating-linear-gradient(
+        90deg,
+        rgba(255,255,255,0.12) 0px,
+        rgba(255,255,255,0.12) 6px,
+        transparent 6px,
+        transparent 12px
+      );
+      margin: 1.25rem 0;
+      position: relative;
     }
 
-    /* Name input */
-    .input-label {
-      font-size: 0.75rem;
-      font-weight: 600;
+    .ticket-tear::before,
+    .ticket-tear::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #0a0a0f;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .ticket-tear::before { left: -20px; }
+    .ticket-tear::after  { right: -20px; }
+
+    .ticket-icon { font-size: 2.2rem; line-height: 1; margin-bottom: 0.75rem; display: block; }
+    .ticket-eyebrow {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #e50914;
+      margin-bottom: 0.5rem;
+    }
+    .ticket-title {
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.3;
+    }
+    .ticket-host {
+      font-size: 0.85rem;
+      color: rgba(255,255,255,0.45);
+      margin-top: 0.4rem;
+    }
+    .ticket-stub {
+      font-size: 0.7rem;
+      color: rgba(255,255,255,0.25);
       letter-spacing: 0.08em;
       text-transform: uppercase;
-      color: rgba(255,255,255,0.35);
-      align-self: flex-start;
     }
 
+    /* ── Inputs ── */
     input[type="text"] {
       width: 100%;
       padding: 0.875rem 1.125rem;
@@ -136,14 +171,13 @@ $chooseUrl    = "/m/{$sessionId}/b";
       outline: none;
       transition: border-color 0.2s, background 0.2s;
     }
-
     input[type="text"]::placeholder { color: rgba(255,255,255,0.25); }
     input[type="text"]:focus {
       border-color: rgba(229,9,20,0.6);
       background: rgba(255,255,255,0.09);
     }
 
-    /* Submit button */
+    /* ── Buttons ── */
     .btn {
       width: 100%;
       padding: 0.9rem 1.5rem;
@@ -156,101 +190,180 @@ $chooseUrl    = "/m/{$sessionId}/b";
       border-radius: 10px;
       cursor: pointer;
       transition: background 0.2s, transform 0.15s, opacity 0.2s;
-      letter-spacing: 0.01em;
     }
-
     .btn:hover:not(:disabled) { background: #f40d1a; transform: translateY(-1px); }
     .btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-    /* Transition overlay */
-    .overlay {
-      position: fixed;
-      inset: 0;
-      background: #0a0a0f;
+    /* ── Theater arrival screen ── */
+    .arrival-rows {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      width: 100%;
+    }
+
+    .arrival-row {
+      display: flex;
+      align-items: center;
+      gap: 0.875rem;
+      padding: 1rem 1.25rem;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      opacity: 0;
+      transform: translateX(-12px);
+      transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.22,1,0.36,1);
+    }
+
+    .arrival-row.show {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    .arrival-avatar { font-size: 1.5rem; }
+    .arrival-text { text-align: left; }
+    .arrival-name { font-size: 0.95rem; font-weight: 600; color: #f5f5f5; }
+    .arrival-sub  { font-size: 0.75rem; color: rgba(255,255,255,0.4); margin-top: 0.1rem; }
+
+    .arrival-cta {
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      gap: 1rem;
+      gap: 0.5rem;
+      width: 100%;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.4s ease 0.6s, transform 0.4s ease 0.6s;
+    }
+    .arrival-cta.show { opacity: 1; transform: translateY(0); }
+    .arrival-cta p {
+      font-size: 0.85rem;
+      color: rgba(255,255,255,0.4);
+      margin-bottom: 0.25rem;
+    }
+
+    /* ── Cinematic flash overlay ── */
+    .flash {
+      position: fixed;
+      inset: 0;
+      background: #0a0a0f;
       opacity: 0;
       pointer-events: none;
-      transition: opacity 0.4s ease;
-      z-index: 100;
+      z-index: 200;
+      transition: opacity 0.25s ease;
     }
-
-    .overlay.active { opacity: 1; pointer-events: all; }
-    .overlay-icon { font-size: 2.5rem; animation: pulse 1s ease-in-out infinite; }
-    .overlay-text { font-size: 1.1rem; font-weight: 500; color: rgba(255,255,255,0.7); }
-
-    @keyframes pulse {
-      0%, 100% { transform: scale(1); }
-      50%       { transform: scale(1.1); }
-    }
+    .flash.active { opacity: 1; }
   </style>
 </head>
 <body>
 
-  <!-- Cinematic transition overlay -->
-  <div class="overlay" id="overlay">
-    <span class="overlay-icon">🎬</span>
-    <p class="overlay-text">Taking your seat…</p>
+<div class="flash" id="flash"></div>
+
+<!-- Screen 1: Ticket + name entry -->
+<div class="screen visible" id="screenTicket">
+  <div class="ticket">
+    <span class="ticket-icon">🎟️</span>
+    <p class="ticket-eyebrow">Movie Ticket</p>
+    <h1 class="ticket-title"><?= $hostName ?> invited you to a MovieMate screening.</h1>
+    <div class="ticket-tear"></div>
+    <p class="ticket-stub">One admit — present this ticket at the door</p>
   </div>
 
-  <div class="card" id="card">
-    <!-- Ticket -->
-    <div class="ticket">
-      <span class="ticket-icon">🎟️</span>
-      <h1 class="ticket-title">You've been invited</h1>
-      <p class="ticket-host">
-        <strong><?= $hostName ?></strong> has reserved a private screening<br>
-        for you on MovieMate.
-      </p>
+  <input
+    type="text"
+    id="nameInput"
+    placeholder="What's your name?"
+    maxlength="40"
+    autocomplete="off"
+    autofocus
+  >
+
+  <button class="btn" id="joinBtn" disabled>
+    Join <?= $hostName ?>'s Screening
+  </button>
+</div>
+
+<!-- Screen 2: Theater arrival -->
+<div class="screen hidden" id="screenArrival">
+  <span style="font-size:2.2rem">🎬</span>
+  <h1 style="font-size:1.4rem;font-weight:700;letter-spacing:-0.02em">The theater is ready.</h1>
+
+  <div class="arrival-rows">
+    <div class="arrival-row" id="rowHost">
+      <span class="arrival-avatar">🍿</span>
+      <div class="arrival-text">
+        <div class="arrival-name"><?= $hostName ?></div>
+        <div class="arrival-sub">has entered the theater.</div>
+      </div>
     </div>
-
-    <div class="divider"></div>
-
-    <!-- Name entry -->
-    <label class="input-label" for="nameInput">What's your name?</label>
-    <input
-      type="text"
-      id="nameInput"
-      placeholder="Enter your name"
-      maxlength="40"
-      autocomplete="off"
-      autofocus
-    >
-
-    <button class="btn" id="joinBtn" disabled>
-      Join <?= $hostName ?>'s Screening
-    </button>
+    <div class="arrival-row" id="rowGuest">
+      <span class="arrival-avatar">🍿</span>
+      <div class="arrival-text">
+        <div class="arrival-name" id="guestNameDisplay">You</div>
+        <div class="arrival-sub">has entered the theater.</div>
+      </div>
+    </div>
   </div>
 
-  <script>
-    const input   = document.getElementById('nameInput');
-    const btn     = document.getElementById('joinBtn');
-    const overlay = document.getElementById('overlay');
+  <div class="arrival-cta" id="arrivalCta">
+    <p>Ready for the previews?</p>
+    <button class="btn" id="startBtn">Start Choosing</button>
+  </div>
+</div>
 
-    input.addEventListener('input', () => {
-      btn.disabled = input.value.trim().length === 0;
-    });
+<script>
+  const input      = document.getElementById('nameInput');
+  const joinBtn    = document.getElementById('joinBtn');
+  const flash      = document.getElementById('flash');
+  const screen1    = document.getElementById('screenTicket');
+  const screen2    = document.getElementById('screenArrival');
+  const rowHost    = document.getElementById('rowHost');
+  const rowGuest   = document.getElementById('rowGuest');
+  const arrivalCta = document.getElementById('arrivalCta');
+  const guestDisplay = document.getElementById('guestNameDisplay');
+  const startBtn   = document.getElementById('startBtn');
+  const chooseUrl  = '<?= $chooseUrl ?>';
 
-    btn.addEventListener('click', async () => {
-      const name = input.value.trim();
-      if (!name) return;
+  input.addEventListener('input', () => {
+    joinBtn.disabled = input.value.trim().length === 0;
+  });
 
-      btn.disabled = true;
-      try { localStorage.setItem('mm_name', name); } catch(_) {}
+  joinBtn.addEventListener('click', async () => {
+    const name = input.value.trim();
+    if (!name) return;
+    joinBtn.disabled = true;
 
-      // Save guest name via status endpoint if available, otherwise just proceed
-      // Show cinematic transition
-      overlay.classList.add('active');
+    try { localStorage.setItem('mm_name', name); } catch(_) {}
+    guestDisplay.textContent = name;
 
-      // Short dramatic pause before redirecting
-      await new Promise(r => setTimeout(r, 1200));
+    // Cinematic flash transition
+    flash.classList.add('active');
+    await sleep(250);
 
-      const params = new URLSearchParams({ name });
-      window.location.href = '<?= $chooseUrl ?>?' + params.toString();
-    });
-  </script>
+    // Switch screens
+    screen1.classList.remove('visible');
+    screen1.classList.add('hidden');
+    screen2.classList.remove('hidden');
+    screen2.classList.add('visible');
+
+    flash.classList.remove('active');
+
+    // Staggered arrivals
+    await sleep(300);
+    rowHost.classList.add('show');
+    await sleep(500);
+    rowGuest.classList.add('show');
+    await sleep(600);
+    arrivalCta.classList.add('show');
+  });
+
+  startBtn.addEventListener('click', () => {
+    const name = input.value.trim() || localStorage.getItem('mm_name') || '';
+    const params = new URLSearchParams({ name });
+    window.location.href = chooseUrl + '?' + params.toString();
+  });
+
+  function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+</script>
 </body>
 </html>
