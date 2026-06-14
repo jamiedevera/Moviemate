@@ -11,7 +11,9 @@ function buildInviteUrl(sessionId: string): string {
 }
 
 // ── Step 1 — Name entry + session creation ────────────────────────────────────
-function StepName({ onDone }: { onDone: (name: string, sessionId: string, chooseUrl: string, inviteUrl: string) => void }) {
+function StepName({ onDone }: {
+  onDone: (name: string, sessionId: string, chooseUrl: string, inviteUrl: string) => void
+}) {
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -61,14 +63,14 @@ function StepName({ onDone }: { onDone: (name: string, sessionId: string, choose
         />
         {error && <p className={styles.error}>{error}</p>}
         <button className={styles.btn} type="submit" disabled={!name.trim() || loading}>
-          {loading ? 'Setting up your room…' : 'Continue'}
+          {loading ? 'Reserving your seat…' : 'Continue'}
         </button>
       </form>
     </div>
   );
 }
 
-// ── Step 2 — Room / invite ────────────────────────────────────────────────────
+// ── Step 2 — Host screening room ──────────────────────────────────────────────
 function StepRoom({
   name,
   sessionId,
@@ -81,7 +83,9 @@ function StepRoom({
   chooseUrl: string;
 }) {
   const [partnerJoined, setPartnerJoined] = useState(false);
+  const [partnerName, setPartnerName] = useState('');
   const [copied, setCopied] = useState(false);
+  const [justJoined, setJustJoined] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const poll = useCallback(async () => {
@@ -90,11 +94,16 @@ function StepRoom({
       if (!res.ok) return;
       const data = await res.json();
       if (data?.bJoined || data?.bothDone) {
+        if (!partnerJoined) {
+          setPartnerName(data.bName || 'Your MovieMate');
+          setJustJoined(true);
+          setTimeout(() => setJustJoined(false), 2000);
+        }
         setPartnerJoined(true);
         if (intervalRef.current) clearInterval(intervalRef.current);
       }
     } catch { /* silent retry */ }
-  }, [sessionId]);
+  }, [sessionId, partnerJoined]);
 
   useEffect(() => {
     poll();
@@ -113,7 +122,21 @@ function StepRoom({
       document.body.removeChild(ta);
     }
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setTimeout(() => setCopied(false), 2500);
+  }
+
+  async function shareInvite() {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Join my MovieMate screening',
+          text: `${name} has reserved a private screening for you on MovieMate.`,
+          url: inviteUrl,
+        });
+      } catch { /* user cancelled */ }
+    } else {
+      copyInvite();
+    }
   }
 
   function handleProceed() {
@@ -123,47 +146,74 @@ function StepRoom({
 
   return (
     <div className={styles.step}>
-      <span className={styles.stepIcon}>🎟️</span>
-      <h1 className={styles.heading}>MovieMate Room</h1>
-      <p className={styles.sub}>
-        {partnerJoined ? "You're both in" : 'Waiting for your MovieMate'}
-      </p>
+      {!partnerJoined ? (
+        <>
+          <span className={styles.stepIcon}>🎟️</span>
+          <h1 className={styles.heading}>Your private screening is ready</h1>
+          <p className={styles.sub}>Share this invite with your MovieMate and wait for them to enter the theater.</p>
 
-      {/* Seats */}
-      <div className={styles.room}>
-        <div className={`${styles.seat} ${styles.seatYou}`}>
-          <div className={styles.seatAvatar}>🎬</div>
-          <div className={styles.seatLabel}>You</div>
-          <div className={styles.seatName}>{name}</div>
-        </div>
-        <div className={styles.roomDivider}>{partnerJoined ? '❤️' : '···'}</div>
-        <div className={`${styles.seat} ${partnerJoined ? styles.seatPartnerJoined : styles.seatPartnerWaiting}`}>
-          <div className={styles.seatAvatar}>{partnerJoined ? '🎬' : '?'}</div>
-          <div className={styles.seatLabel}>Partner</div>
-          <div className={styles.seatName}>{partnerJoined ? 'Joined' : 'Not joined yet'}</div>
-        </div>
-      </div>
+          {/* Seats */}
+          <div className={styles.room}>
+            <div className={`${styles.seat} ${styles.seatYou}`}>
+              <div className={styles.seatAvatar}>🍿</div>
+              <div className={styles.seatName}>{name}</div>
+              <div className={styles.seatTag}>Already seated</div>
+            </div>
+            <div className={styles.roomDivider}>···</div>
+            <div className={`${styles.seat} ${styles.seatPartnerWaiting}`}>
+              <div className={styles.seatAvatar}>💺</div>
+              <div className={styles.seatName}>Empty seat</div>
+              <div className={styles.seatTag}>Waiting…</div>
+            </div>
+          </div>
 
-      {/* Invite link — always visible until partner joins */}
-      {!partnerJoined && (
-        <div className={styles.inviteBox}>
-          <span className={styles.inviteUrl}>{inviteUrl}</span>
-          <button className={styles.copyBtn} onClick={copyInvite}>
-            {copied ? '✓ Copied' : 'Copy link'}
+          {/* Invite actions */}
+          <div className={styles.inviteSection}>
+            <p className={styles.inviteLabel}>📩 Invite your MovieMate</p>
+            <div className={styles.inviteBox}>
+              <span className={styles.inviteUrl}>{inviteUrl}</span>
+            </div>
+            <div className={styles.inviteActions}>
+              <button className={styles.btnInvite} onClick={copyInvite}>
+                {copied ? '✓ Copied!' : 'Copy Invite'}
+              </button>
+              <button className={styles.btnInviteSecondary} onClick={shareInvite}>
+                Share Invite
+              </button>
+            </div>
+          </div>
+        </>
+      ) : (
+        <>
+          <span className={styles.stepIcon}>{justJoined ? '🎉' : '🎬'}</span>
+          <h1 className={styles.heading}>Both MovieMates have arrived.</h1>
+          <p className={styles.sub}>The theater is ready. Time to pick your movies.</p>
+
+          {/* Both seated */}
+          <div className={styles.room}>
+            <div className={`${styles.seat} ${styles.seatYou}`}>
+              <div className={styles.seatAvatar}>🍿</div>
+              <div className={styles.seatName}>{name}</div>
+              <div className={styles.seatTag}>Seated</div>
+            </div>
+            <div className={styles.roomDivider}>❤️</div>
+            <div className={`${styles.seat} ${styles.seatPartnerJoined}`}>
+              <div className={styles.seatAvatar}>🍿</div>
+              <div className={styles.seatName}>{partnerName || 'Your MovieMate'}</div>
+              <div className={styles.seatTag}>Seated</div>
+            </div>
+          </div>
+
+          <button className={styles.btn} onClick={handleProceed}>
+            Start Choosing Movies
           </button>
-        </div>
-      )}
-
-      {partnerJoined && (
-        <button className={styles.btn} onClick={handleProceed}>
-          Pick your movies
-        </button>
+        </>
       )}
     </div>
   );
 }
 
-// ── Main — 2 steps only ───────────────────────────────────────────────────────
+// ── Main ──────────────────────────────────────────────────────────────────────
 export default function SessionPage() {
   const [step, setStep] = useState<Step>(1);
   const [transitioning, setTransitioning] = useState(false);
@@ -182,13 +232,11 @@ export default function SessionPage() {
   return (
     <div className={styles.shell}>
       <div className={styles.grain} aria-hidden="true" />
-
       <div className={styles.dots} aria-label="Step indicator">
         {([1, 2] as Step[]).map((s) => (
           <span key={s} className={`${styles.dot} ${step === s ? styles.dotActive : ''}`} />
         ))}
       </div>
-
       <div className={`${styles.card} ${transitioning ? styles.cardOut : styles.cardIn}`}>
         {step === 1 && <StepName onDone={handleDone} />}
         {step === 2 && (
