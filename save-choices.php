@@ -1,314 +1,180 @@
 <?php
 // save-choices.php
-
 require_once __DIR__ . '/db.php';
 
-// prevent back-button cache for this page
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 header('Cache-Control: post-check=0, pre-check=0', false);
 header('Pragma: no-cache');
 header('Expires: 0');
 
-// Validate inputs
 $sessionId = $_POST['session'] ?? $_GET['session'] ?? '';
-$who       = $_POST['who'] ?? $_GET['who'] ?? '';
-$movies    = $_POST['movies'] ?? [];
+$who       = $_POST['who']     ?? $_GET['who']     ?? '';
+$movies    = $_POST['movies']  ?? [];
 
-// DEBUG: log request info to server error log to help identify 404/500 causes
-error_log('save-choices invoked: method=' . ($_SERVER['REQUEST_METHOD'] ?? '') . ' session=' . ($sessionId ?? '') . ' who=' . ($who ?? '') . ' movies_count=' . (is_array($movies) ? count($movies) : '0'));
+error_log('save-choices: method=' . ($_SERVER['REQUEST_METHOD'] ?? '') . ' session=' . $sessionId . ' who=' . $who . ' movies_count=' . (is_array($movies) ? count($movies) : 0));
 
-// Check session ID format (16 hex characters)
 if (!$sessionId || !preg_match('/^[a-f0-9]{16}$/', $sessionId)) {
     displayError('Invalid session ID', 'The session ID is invalid. Please go back and try again.');
 }
 
-// CSRF Validation (checks PHP session or uses unguessable session signature for stateless serverless environments)
-$csrfToken = $_POST['csrf_token'] ?? '';
-$expectedToken = $_SESSION['csrf_token'] ?? '';
-$secret = defined('DB_PASS') ? DB_PASS : 'moviemate_secret';
-$statelessToken = hash_hmac('sha256', $sessionId . '_csrf', $secret);
+// ── CSRF — stateless only (sessions don't persist on Vercel serverless) ──────
+// Both choose.php and save-choices.php derive the same token from sessionId + secret.
+// No PHP session required.
+$secret         = defined('DB_PASS') ? DB_PASS : 'moviemate_secret';
+$expectedToken  = hash_hmac('sha256', $sessionId . '_csrf', $secret);
+$submittedToken = $_POST['csrf_token'] ?? '';
 
-if ((empty($expectedToken) || !hash_equals($expectedToken, $csrfToken)) && !hash_equals($statelessToken, $csrfToken)) {
-    displayError('Invalid Request', 'Security token mismatch (CSRF). Please refresh the page and try again.');
+if (!hash_equals($expectedToken, $submittedToken)) {
+    // On Vercel, PHP sessions are unreliable — skip session token and rely solely on stateless token.
+    // If stateless also fails, show error.
+    displayError('Invalid Request', 'Security token mismatch. Please refresh the page and try again.');
 }
 
-// Check who parameter
-if (!in_array($who, ['A','B'], true)) {
-    displayError('Invalid user type', 'Invalid user type detected. Please use the correct link.');
+if (!in_array($who, ['A', 'B'], true)) {
+    displayError('Invalid user type', 'Invalid user type detected.');
 }
 
-// Check movies array
-if (!is_array($movies)) {
-    displayError('Invalid data', 'The movie data is invalid. Please go back and try again.');
+if (!is_array($movies) || empty($movies)) {
+    displayError('No movies selected', 'You must select at least 1 movie.');
 }
 
-if (empty($movies)) {
-    displayError('No movies selected', 'You must select at least 1 movie. Please go back and select your movies.');
-}
-
-// Check movie count — require exactly 5 picks
 if (count($movies) !== 5) {
-    displayError('Invalid selection count', 'You must select exactly 5 movies before saving. Please go back and pick 5 movies.');
+    displayError('Invalid selection count', 'You must select exactly 5 movies. You selected ' . count($movies) . '.');
 }
 
-
-
-// Verify session exists in database
+// Verify session exists
 try {
     $checkStmt = $pdo->prepare('SELECT id, a_movies, b_movies FROM sessions WHERE id = :id');
     $checkStmt->execute(['id' => $sessionId]);
     $session = $checkStmt->fetch(PDO::FETCH_ASSOC);
-    
-    if (!$session) {
-        displayError('Session not found', 'This session does not exist or may have expired.');
-    }
-    
-    // Check if this person already submitted
-    $alreadyDone = ($who === 'A' && !empty($session['a_movies'])) || 
+    if (!$session) displayError('Session not found', 'This session does not exist or may have expired.');
+
+    $alreadyDone = ($who === 'A' && !empty($session['a_movies'])) ||
                    ($who === 'B' && !empty($session['b_movies']));
-    
-    if ($alreadyDone) {
-        displayError('Already submitted', 'You have already submitted your movie choices for this session.');
-    }
+    if ($alreadyDone) displayError('Already submitted', 'You have already submitted your movie choices.');
 } catch (PDOException $e) {
-    error_log('Database error in save-choices.php (check): ' . $e->getMessage());
-    displayError('Database error', 'A database error occurred. Please try again later.');
+    error_log('DB error (check): ' . $e->getMessage());
+    displayError('Database error', 'A database error occurred. Please try again.');
 }
 
-// Keep only integers and remove duplicates
-$movies = array_map('intval', array_filter($movies, 'is_numeric'));
-$movies = array_unique($movies);
-$movies = array_values($movies); // re-index
-
-// Validate all movie IDs are positive integers
-foreach ($movies as $movieId) {
-    if ($movieId <= 0) {
-        displayError('Invalid movie IDs', 'One or more movie IDs are invalid. Please try again.');
-    }
+// Sanitise movies
+$movies = array_values(array_unique(array_map('intval', array_filter($movies, 'is_numeric'))));
+foreach ($movies as $mid) {
+    if ($mid <= 0) displayError('Invalid movie IDs', 'One or more movie IDs are invalid.');
 }
-
-// Final check after deduplication
 if (count($movies) !== 5) {
-    displayError('Invalid selection count', 'You must select exactly 5 unique movies before saving. Please go back and pick 5 movies.');
+    displayError('Invalid selection count', 'You must select exactly 5 unique movies.');
 }
-
-
 
 $json = json_encode($movies);
 
-// Update DB: set a_movies or b_movies
+// Save to DB
 try {
-    if ($who === 'A') {
-        $stmt = $pdo->prepare('UPDATE sessions SET a_movies = :movies WHERE id = :id');
-    } else {
-        $stmt = $pdo->prepare('UPDATE sessions SET b_movies = :movies WHERE id = :id');
-    }
-    $success = $stmt->execute(['movies' => $json, 'id' => $sessionId]);
-    
-    if (!$success) {
+    $col  = ($who === 'A') ? 'a_movies' : 'b_movies';
+    $stmt = $pdo->prepare("UPDATE sessions SET {$col} = :movies WHERE id = :id");
+    if (!$stmt->execute(['movies' => $json, 'id' => $sessionId])) {
         displayError('Save failed', 'Failed to save your choices. Please try again.');
     }
-    
-    // If AJAX, return JSON and stop
-    if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest' || isset($_GET['ajax'])) {
+
+    if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest' || isset($_GET['ajax'])) {
         header('Content-Type: application/json');
         echo json_encode(['success' => true]);
         exit;
     }
 } catch (PDOException $e) {
-    error_log('Database error saving choices: ' . $e->getMessage());
+    error_log('DB error (save): ' . $e->getMessage());
     displayError('Database error', 'Failed to save your choices. Please try again.');
 }
 
+// Compute base
+$base = '';
+if (isset($_SERVER['DOCUMENT_ROOT'])) {
+    $docRoot = str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT']);
+    $dir     = str_replace('\\', '/', __DIR__);
+    if (stripos($dir, $docRoot) === 0) $base = substr($dir, strlen($docRoot));
+}
+$base = rtrim($base, '/\\');
 
-// Check if both sides are done
+// Check if both done → redirect to match
 try {
     $stmt = $pdo->prepare('SELECT a_movies, b_movies FROM sessions WHERE id = :id');
     $stmt->execute(['id' => $sessionId]);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$row) displayError('Session error', 'Session not found after saving.');
 
-    if (!$row) {
-        displayError('Session error', 'Session not found after saving.');
+    if (!empty($row['a_movies']) && !empty($row['b_movies'])) {
+        header('Location: ' . $base . '/m/' . urlencode($sessionId) . '/match');
+        exit;
     }
-
-$base = '';
-if (isset($_SERVER['DOCUMENT_ROOT'])) {
-    $docRoot = str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT']);
-    $dir = str_replace('\\', '/', __DIR__);
-    $docRootLower = strtolower($docRoot);
-    $dirLower = strtolower($dir);
-    if (strpos($dirLower, $docRootLower) === 0) {
-        $base = substr($dir, strlen($docRoot));
-    }
-}
-$base = rtrim($base, '/\\');
-
-if (!empty($row['a_movies']) && !empty($row['b_movies'])) {
-    // Both done → pretty URL handled by .htaccess / router.php
-    header('Location: ' . $base . '/m/' . urlencode($sessionId) . '/match');
-    exit;
-}
-
 } catch (PDOException $e) {
-    error_log('Database error checking completion: ' . $e->getMessage());
-    displayError('Database error', 'An error occurred while checking completion. Please try again.');
+    error_log('DB error (check completion): ' . $e->getMessage());
+    displayError('Database error', 'An error occurred while checking completion.');
 }
-
-// Only one side done → show simple waiting message
 ?>
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Saved!</title>
+    <title>Saved! — MovieMate</title>
     <link rel="stylesheet" href="/assets/global.css">
 </head>
 <body>
 <div class="glass-card">
-      <h2 style="font-size: 2rem; margin-bottom: 16px;">Your picks are saved <span style="color:var(--primary-red);">✅</span></h2>
-      <p>You selected <strong><?php echo count($movies); ?></strong> movie<?php echo count($movies) !== 1 ? 's' : ''; ?>.</p>
-      <p id="waitingText">We're waiting for the other person to finish choosing their movies.</p>
-      <small class="small-text">You can safely close this tab now. When both of you are done, you'll be able to see your results.</small>
-  </div>
-  <script>
-    setTimeout(() => {
-        const waitingText = document.getElementById('waitingText');
-        if (waitingText) {
-            waitingText.innerHTML = "Still waiting? Make sure your partner has opened their link and finished picking!<br><br><a href='/' style='color:#ef4444; font-weight:bold; text-decoration:underline;'>Or Start a New Session</a>";
-        }
-    }, 15000);
-  </script>
-</body>
-</html>
+    <h2 style="font-size:2rem;margin-bottom:16px;">Your picks are saved <span style="color:var(--primary-red);">✅</span></h2>
+    <p>You selected <strong><?php echo count($movies); ?></strong> movies.</p>
+    <p id="waitingText">Waiting for your MovieMate to finish choosing...</p>
+    <small class="small-text">You can safely close this tab. When both of you are done, you'll be redirected automatically.</small>
+</div>
 
 <script>
-(() => {
-    const session = "<?php echo htmlspecialchars($sessionId); ?>";
-    const statusUrl = "/m/" + session + "/status";
-    const pollInterval = 3000; // ms
-    let pollTimer = null;
-
-    // Poll endpoint to detect when both players are done
-    function checkStatus() {
-        fetch(statusUrl, { method: 'GET', cache: 'no-store' })
-            .then(res => {
-                if (!res.ok) throw new Error('status ' + res.status);
-                return res.json();
-            })
-            .then(data => {
-                if (data && data.bothDone) {
-                    // Redirect to the match page (clean URL)
-                    window.location.replace('/m/' + session + '/match');
-                }
-            })
-            .catch(err => {
-                // Keep polling silently — network hiccups will be retried
-                console.error('session status check failed', err);
-            });
-    }
-
-    try {
-        // Start polling
-        pollTimer = setInterval(checkStatus, pollInterval);
-        // Kick off immediately
-        checkStatus();
-
-        // Stop polling when page is unloaded
-        window.addEventListener('beforeunload', () => {
-            if (pollTimer) clearInterval(pollTimer);
-        });
-    } catch (e) {
-        console.error('Polling error', e);
-    }
-})();
-</script>
-
-<script>
-// Poll the session-status endpoint to detect when both sides have saved
 (function () {
-    var session = <?php echo json_encode($sessionId); ?>;
-    if (!session) return;
-    var statusUrl = '/m/' + session + '/status';
-    var pollInterval = 3000; // 3s
-    var timer = null;
+    var session    = <?php echo json_encode($sessionId); ?>;
+    var statusUrl  = '/m/' + session + '/status';
+    var timer      = setInterval(checkStatus, 3000);
+    checkStatus();
+    window.addEventListener('beforeunload', function () { clearInterval(timer); });
 
     function checkStatus() {
         fetch(statusUrl, { cache: 'no-store' })
-            .then(function (res) { if (!res.ok) throw new Error('status ' + res.status); return res.json(); })
-            .then(function (data) {
-                if (data && data.bothDone) {
-                    // Redirect to match page when both are done
-                    window.location.replace('/m/' + session + '/match');
-                }
-            }).catch(function (err) {
-                console.error('session status check failed', err);
-            });
+            .then(function (r) { return r.json(); })
+            .then(function (d) { if (d && d.bothDone) window.location.replace('/m/' + session + '/match'); })
+            .catch(function () {});
     }
 
-    // Start polling
-    timer = setInterval(checkStatus, pollInterval);
-    checkStatus();
-    // Stop polling on unload
-    window.addEventListener('beforeunload', function () { if (timer) clearInterval(timer); });
+    setTimeout(function () {
+        var el = document.getElementById('waitingText');
+        if (el) el.innerHTML = "Still waiting? Make sure your partner has opened their link!<br><br><a href='/' style='color:#ef4444;font-weight:bold;text-decoration:underline;'>Start a New Session</a>";
+    }, 15000);
 })();
 </script>
-
-<script>
-/* existing back-button / popstate safeguard — unchanged */
-(() => {
-    try {
-        history.pushState(null, null, window.location.href);
-        window.addEventListener('popstate', function () {
-            // Prompt user before navigating away to home
-            var go = confirm('If you go back, your picks/session will be lost and the current session will be reset. Continue?');
-            if (go) {
-                window.location.replace('/');
-            } else {
-                try { history.pushState(null, null, window.location.href); } catch (e) {}
-            }
-        });
-    } catch (e) {
-        // ignore errors
-    }
-})();
-</script>
-
+</body>
+</html>
 <?php
 function displayError($title, $message) {
-    if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest' || isset($_GET['ajax'])) {
+    $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') || isset($_GET['ajax']);
+    if ($isAjax) {
         header('Content-Type: application/json');
         http_response_code(400);
         echo json_encode(['error' => $message]);
         exit;
     }
     http_response_code(400);
-
     $base = '';
     if (isset($_SERVER['DOCUMENT_ROOT'])) {
         $docRoot = str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT']);
-        $dir = str_replace('\\', '/', __DIR__);
-        $docRootLower = strtolower($docRoot);
-        $dirLower = strtolower($dir);
-        if (strpos($dirLower, $docRootLower) === 0) {
-            $base = substr($dir, strlen($docRoot));
-        }
+        $dir     = str_replace('\\', '/', __DIR__);
+        if (stripos($dir, $docRoot) === 0) $base = substr($dir, strlen($docRoot));
     }
     $base = rtrim($base, '/\\');
-
-    echo '<!DOCTYPE html>
-    <html><head><meta charset="UTF-8"><title>' . htmlspecialchars($title) . '</title>
-    <link rel="stylesheet" href="/assets/global.css">
-    </head>
-    <body>
-      <div class="glass-card" style="border-color: var(--primary-red);">
-          <h2 style="color: var(--primary-red); font-size: 2rem; margin-bottom: 16px;">' . htmlspecialchars($title) . ' ❌</h2>
-          <p>' . htmlspecialchars($message) . '</p>
-          <div style="margin-top: 24px; display: flex; flex-direction: column; gap: 12px;">
-              <a href="' . htmlspecialchars($base) . '/" onclick="return confirm(\'If you go home, your picks will be lost and the current session will be reset. Continue?\');" class="cinematic-btn">Go Home</a>
-              <a href="' . htmlspecialchars($base) . '/" onclick="return confirm(\'If you go home, your picks will be lost and the current session will be reset. Continue?\');" class="cinematic-btn" style="background-color: #333;">Start Over</a>
-          </div>
-      </div>
-    </body></html>';
+    echo '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' . htmlspecialchars($title) . '</title>
+    <link rel="stylesheet" href="/assets/global.css"></head><body>
+    <div class="glass-card" style="border-color:var(--primary-red);">
+        <h2 style="color:var(--primary-red);font-size:2rem;margin-bottom:16px;">' . htmlspecialchars($title) . ' ❌</h2>
+        <p>' . htmlspecialchars($message) . '</p>
+        <div style="margin-top:24px;display:flex;flex-direction:column;gap:12px;">
+            <a href="' . htmlspecialchars($base) . '/" class="cinematic-btn">Go Home</a>
+        </div>
+    </div></body></html>';
     exit;
 }
 ?>
