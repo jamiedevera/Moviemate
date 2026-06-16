@@ -1,17 +1,19 @@
 import { NextResponse } from "next/server";
 import { Pool } from "pg";
 
-export const revalidate = 0; // always fresh — counter must be live
+export const revalidate = 0;
 
 let pool: Pool | null = null;
 
 function getPool() {
   if (!pool) {
     pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
-      ssl: process.env.DATABASE_URL?.includes("supabase")
-        ? { rejectUnauthorized: false }
-        : false,
+      host:     process.env.DB_HOST,
+      port:     parseInt(process.env.DB_PORT ?? "5432", 10),
+      database: process.env.DB_NAME,
+      user:     process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+      ssl: { rejectUnauthorized: false },
       max: 1,
     });
   }
@@ -29,7 +31,7 @@ export async function GET() {
     year: number | string;
   }[] = [];
 
-  // ── DB: count completed sessions ─────────────────────────────────────────
+  // ── DB: count completed sessions ──────────────────────────────────────────
   try {
     const client = await getPool().connect();
     try {
@@ -46,7 +48,7 @@ export async function GET() {
     console.error("db-stats error:", err);
   }
 
-  // ── TMDb: popular movies ──────────────────────────────────────────────────
+  // ── TMDb: popular movies ───────────────────────────────────────────────────
   const tmdbKey = process.env.TMDB_API_KEY;
   if (tmdbKey) {
     try {
@@ -78,13 +80,13 @@ export async function GET() {
         }
       }
     } catch {
-      // TMDb unavailable — silent
+      // TMDb unavailable
     }
   }
 
   return NextResponse.json({
     matches: matchesCount,
-    movies: moviesCount,
+    movies:  moviesCount,
     popular: popularMovies,
   });
 }
