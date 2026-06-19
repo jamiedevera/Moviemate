@@ -1,24 +1,7 @@
 import { NextResponse } from "next/server";
-import { Pool } from "pg";
+import { query } from "@/lib/db";
 
 export const revalidate = 0;
-
-let pool: Pool | null = null;
-
-function getPool() {
-  if (!pool) {
-    pool = new Pool({
-      host:     process.env.DB_HOST,
-      port:     parseInt(process.env.DB_PORT ?? "5432", 10),
-      database: process.env.DB_NAME,
-      user:     process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
-      ssl: { rejectUnauthorized: false },
-      max: 1,
-    });
-  }
-  return pool;
-}
 
 export async function GET() {
   let matchesCount = 0;
@@ -33,17 +16,12 @@ export async function GET() {
 
   // ── DB: count completed sessions ──────────────────────────────────────────
   try {
-    const client = await getPool().connect();
-    try {
-      const result = await client.query(
-        `SELECT COUNT(*) FROM sessions
-         WHERE a_movies IS NOT NULL AND a_movies != ''
-         AND   b_movies IS NOT NULL AND b_movies != ''`
-      );
-      matchesCount = parseInt(result.rows[0].count ?? "0", 10);
-    } finally {
-      client.release();
-    }
+    const rows = await query<{ count: string }>(
+      `SELECT COUNT(*) FROM sessions
+       WHERE a_movies IS NOT NULL AND a_movies != ''
+       AND   b_movies IS NOT NULL AND b_movies != ''`
+    );
+    matchesCount = parseInt(rows[0]?.count ?? "0", 10);
   } catch (err) {
     console.error("db-stats error:", err);
   }

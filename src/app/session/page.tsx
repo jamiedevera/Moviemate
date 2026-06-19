@@ -1,23 +1,22 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-import styles from './session.module.css';
+import { useState, useEffect, useRef, useCallback } from "react";
+import styles from "./session.module.css";
 
 type Step = 1 | 2;
 
 function buildInviteUrl(sessionId: string): string {
-  if (typeof window === 'undefined') return '';
+  if (typeof window === "undefined") return "";
   return `${window.location.origin}/m/${sessionId}`;
 }
 
-// ── Step 1 — Name + session creation ─────────────────────────────────────────
 function StepName({ onDone }: {
-  onDone: (name: string, sessionId: string, chooseUrl: string, inviteUrl: string) => void
+  onDone: (name: string, sessionId: string, chooseUrl: string, inviteUrl: string) => void;
 }) {
-  const [name, setName] = useState('');
+  const [name, setName]     = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [error, setError]   = useState("");
+  const inputRef            = useRef<HTMLInputElement>(null);
 
   useEffect(() => { inputRef.current?.focus(); }, []);
 
@@ -26,23 +25,18 @@ function StepName({ onDone }: {
     const trimmed = name.trim();
     if (!trimmed) return;
     setLoading(true);
-    setError('');
+    setError("");
     try {
-      const formData = new FormData();
-      formData.append('name', trimmed);
-      const res = await fetch('/start-session', {
-        method: 'POST',
-        headers: { Accept: 'application/json' },
-        body: formData,
-      });
-      if (!res.ok) throw new Error(`Server error: ${res.status}`);
+      const form = new FormData();
+      form.append("name", trimmed);
+      const res = await fetch("/api/session", { method: "POST", body: form });
       const data = await res.json();
-      if (!data.success) throw new Error(data.error ?? 'Failed to start session.');
+      if (!data.success) throw new Error(data.error ?? "Failed to start session.");
       const inviteUrl = buildInviteUrl(data.sessionId);
-      localStorage.setItem('mm_name', trimmed);
+      localStorage.setItem("mm_name", trimmed);
       onDone(trimmed, data.sessionId, data.url, inviteUrl);
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Something went wrong.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong.");
       setLoading(false);
     }
   }
@@ -50,62 +44,51 @@ function StepName({ onDone }: {
   return (
     <div className={styles.step}>
       <span className={styles.stepIcon}>🎟️</span>
-      <h1 className={styles.heading}>Let's get your name on the ticket</h1>
-      <p className={styles.sub}>We'll save your seat before the movie night begins.</p>
+      <h1 className={styles.heading}>Let&apos;s get your name on the ticket</h1>
+      <p className={styles.sub}>We&apos;ll save your seat before the movie night begins.</p>
       <form onSubmit={handleSubmit} className={styles.form}>
         <input
           ref={inputRef}
           className={styles.input}
-          type="text"
           placeholder="Enter your name"
           value={name}
           onChange={(e) => setName(e.target.value)}
           maxLength={40}
-          autoComplete="off"
           disabled={loading}
         />
         {error && <p className={styles.error}>{error}</p>}
         <button className={styles.btn} type="submit" disabled={!name.trim() || loading}>
-          {loading ? 'Reserving your seat…' : 'Continue'}
+          {loading ? "Reserving your seat…" : "Continue"}
         </button>
       </form>
     </div>
   );
 }
 
-// ── Step 2 — Room ─────────────────────────────────────────────────────────────
 function StepRoom({
-  name,
-  sessionId,
-  inviteUrl,
-  chooseUrl,
+  name, sessionId, inviteUrl, chooseUrl,
 }: {
-  name: string;
-  sessionId: string;
-  inviteUrl: string;
-  chooseUrl: string;
+  name: string; sessionId: string; inviteUrl: string; chooseUrl: string;
 }) {
   const [partnerJoined, setPartnerJoined] = useState(false);
-  const [partnerName, setPartnerName] = useState('');
-  const [copied, setCopied] = useState(false);
+  const [partnerName, setPartnerName]     = useState("");
+  const [copied, setCopied]               = useState(false);
   const [showPartnerRow, setShowPartnerRow] = useState(false);
-  const [showCta, setShowCta] = useState(false);
+  const [showCta, setShowCta]             = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const poll = useCallback(async () => {
     try {
-      const res = await fetch(`/m/${sessionId}/status`, { cache: 'no-store' });
-      if (!res.ok) return;
+      const res  = await fetch(`/api/status/${sessionId}`, { cache: "no-store" });
       const data = await res.json();
       if (data?.bJoined || data?.bothDone) {
-        setPartnerName(data.bName || 'Your MovieMate');
+        setPartnerName(data.bName || "Your MovieMate");
         setPartnerJoined(true);
         if (intervalRef.current) clearInterval(intervalRef.current);
-        // Stagger the arrivals
         setTimeout(() => setShowPartnerRow(true), 500);
         setTimeout(() => setShowCta(true), 1100);
       }
-    } catch { /* silent retry */ }
+    } catch { /* keep polling */ }
   }, [sessionId]);
 
   useEffect(() => {
@@ -115,15 +98,7 @@ function StepRoom({
   }, [poll]);
 
   async function copyInvite() {
-    try { await navigator.clipboard.writeText(inviteUrl); }
-    catch {
-      const ta = document.createElement('textarea');
-      ta.value = inviteUrl;
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      document.body.removeChild(ta);
-    }
+    try { await navigator.clipboard.writeText(inviteUrl); } catch { /* ignore */ }
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
   }
@@ -131,23 +106,16 @@ function StepRoom({
   async function shareInvite() {
     if (navigator.share) {
       try {
-        await navigator.share({
-          title: 'Join my MovieMate screening',
-          text: `${name} has reserved a private screening for you on MovieMate.`,
-          url: inviteUrl,
-        });
+        await navigator.share({ title: "Join my MovieMate screening", text: `${name} has reserved a private screening for you.`, url: inviteUrl });
       } catch { /* cancelled */ }
-    } else {
-      copyInvite();
-    }
+    } else copyInvite();
   }
 
   function handleProceed() {
-    localStorage.setItem('mm_name', name);
+    localStorage.setItem("mm_name", name);
     window.location.href = chooseUrl;
   }
 
-  // ── Waiting state ──
   if (!partnerJoined) {
     return (
       <div className={styles.step}>
@@ -176,7 +144,7 @@ function StepRoom({
           </div>
           <div className={styles.inviteActions}>
             <button className={styles.btnInvite} onClick={copyInvite}>
-              {copied ? '✓ Copied!' : 'Copy Invite'}
+              {copied ? "✓ Copied!" : "Copy Invite"}
             </button>
             <button className={styles.btnInviteSecondary} onClick={shareInvite}>
               Share Invite
@@ -187,7 +155,6 @@ function StepRoom({
     );
   }
 
-  // ── Arrived state ──
   return (
     <div className={styles.step}>
       <span className={styles.stepIcon}>🎬</span>
@@ -201,14 +168,14 @@ function StepRoom({
           <div className={styles.seatTag}>Seated</div>
         </div>
         <div className={styles.roomDivider}>❤️</div>
-        <div className={`${styles.seat} ${styles.seatPartnerJoined} ${showPartnerRow ? styles.seatPartnerAnimate : ''}`}>
+        <div className={`${styles.seat} ${styles.seatPartnerJoined} ${showPartnerRow ? styles.seatPartnerAnimate : ""}`}>
           <div className={styles.seatAvatar}>🍿</div>
-          <div className={styles.seatName}>{partnerName || 'Your MovieMate'}</div>
+          <div className={styles.seatName}>{partnerName || "Your MovieMate"}</div>
           <div className={styles.seatTag}>Seated</div>
         </div>
       </div>
 
-      <div className={`${styles.arrivalCta} ${showCta ? styles.arrivalCtaVisible : ''}`}>
+      <div className={`${styles.arrivalCta} ${showCta ? styles.arrivalCtaVisible : ""}`}>
         <button className={styles.btn} onClick={handleProceed}>
           Start Choosing Movies
         </button>
@@ -217,15 +184,14 @@ function StepRoom({
   );
 }
 
-// ── Main ──────────────────────────────────────────────────────────────────────
 export default function SessionPage() {
-  const [step, setStep] = useState<Step>(1);
+  const [step, setStep]           = useState<Step>(1);
   const [transitioning, setTransitioning] = useState(false);
-  const [session, setSession] = useState({ name: '', sessionId: '', chooseUrl: '', inviteUrl: '' });
+  const [session, setSession]     = useState({ name: "", sessionId: "", chooseUrl: "", inviteUrl: "" });
 
-  function advance(nextStep: Step) {
+  function advance(next: Step) {
     setTransitioning(true);
-    setTimeout(() => { setStep(nextStep); setTransitioning(false); }, 280);
+    setTimeout(() => { setStep(next); setTransitioning(false); }, 280);
   }
 
   function handleDone(name: string, sessionId: string, chooseUrl: string, inviteUrl: string) {
@@ -236,20 +202,15 @@ export default function SessionPage() {
   return (
     <div className={styles.shell}>
       <div className={styles.grain} aria-hidden="true" />
-      <div className={styles.dots} aria-label="Step indicator">
+      <div className={styles.dots}>
         {([1, 2] as Step[]).map((s) => (
-          <span key={s} className={`${styles.dot} ${step === s ? styles.dotActive : ''}`} />
+          <span key={s} className={`${styles.dot} ${step === s ? styles.dotActive : ""}`} />
         ))}
       </div>
       <div className={`${styles.card} ${transitioning ? styles.cardOut : styles.cardIn}`}>
         {step === 1 && <StepName onDone={handleDone} />}
         {step === 2 && (
-          <StepRoom
-            name={session.name}
-            sessionId={session.sessionId}
-            inviteUrl={session.inviteUrl}
-            chooseUrl={session.chooseUrl}
-          />
+          <StepRoom name={session.name} sessionId={session.sessionId} inviteUrl={session.inviteUrl} chooseUrl={session.chooseUrl} />
         )}
       </div>
     </div>
