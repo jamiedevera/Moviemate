@@ -30,7 +30,6 @@ export default async function JoinPage({
 
   const { a_movies, b_movies, a_name } = rows[0];
 
-  // Already submitted — skip straight to the right place
   if (b_movies) {
     redirect(a_movies ? `/m/${session}/match` : `/m/${session}/b`);
   }
