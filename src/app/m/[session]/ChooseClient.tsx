@@ -187,10 +187,52 @@ export default function ChooseClient({ who }: Props) {
   if (waiting) {
     return (
       <div style={overlayStyle}>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: "3rem", marginBottom: 16 }}>🍿</div>
+        <div className="popcorn-waiting" aria-live="polite">
+          <div className="popcorn-stage" aria-hidden="true">
+            <span className="popcorn-bucket">{"\u{1F37F}"}</span>
+            <span className="popcorn-kernel kernel-one" />
+            <span className="popcorn-kernel kernel-two" />
+            <span className="popcorn-kernel kernel-three" />
+            <span className="popcorn-kernel kernel-four" />
+          </div>
           <h2 style={{ marginBottom: 8 }}>Picks saved!</h2>
-          <p style={{ color: "#9ca3af" }}>Waiting for your MovieMate to finish picking…</p>
+          <p style={{ color: "#9ca3af" }}>Waiting for your MovieMate to finish picking...</p>
+          <p style={{ color: "#6b7280", fontSize: "0.82rem", marginTop: 14 }}>
+            Fresh popcorn is on the way.
+          </p>
+          <style jsx>{`
+            .popcorn-waiting { text-align: center; }
+            .popcorn-stage { position: relative; width: 112px; height: 104px; margin: 0 auto 12px; }
+            .popcorn-bucket {
+              position: absolute; bottom: 0; left: 50%; font-size: 4rem; line-height: 1;
+              transform: translateX(-50%); filter: drop-shadow(0 8px 12px rgba(229, 9, 20, 0.3));
+              animation: popcorn-bounce 1.7s ease-in-out infinite;
+            }
+            .popcorn-kernel {
+              position: absolute; bottom: 38px; left: 50%; width: 10px; height: 10px;
+              border-radius: 50%; background: #ffe7a5; box-shadow: 0 0 0 2px #f5c66d;
+              opacity: 0; animation: kernel-pop 1.7s cubic-bezier(.2,.8,.3,1) infinite;
+            }
+            .kernel-one { --x: -36px; --y: -52px; animation-delay: 0s; }
+            .kernel-two { --x: -12px; --y: -70px; animation-delay: .32s; }
+            .kernel-three { --x: 25px; --y: -56px; animation-delay: .64s; }
+            .kernel-four { --x: 42px; --y: -34px; animation-delay: .96s; }
+            @keyframes popcorn-bounce {
+              0%, 45%, 100% { transform: translateX(-50%) translateY(0) rotate(0deg); }
+              55% { transform: translateX(-50%) translateY(-7px) rotate(-3deg); }
+              68% { transform: translateX(-50%) translateY(0) rotate(2deg); }
+            }
+            @keyframes kernel-pop {
+              0% { opacity: 0; transform: translate(-50%, 0) scale(.35); }
+              14% { opacity: 1; }
+              58% { opacity: 1; transform: translate(calc(-50% + var(--x)), var(--y)) scale(1); }
+              100% { opacity: 0; transform: translate(calc(-50% + var(--x)), var(--y)) scale(.65); }
+            }
+            @media (prefers-reduced-motion: reduce) {
+              .popcorn-bucket, .popcorn-kernel { animation: none; }
+              .popcorn-kernel { display: none; }
+            }
+          `}</style>
         </div>
       </div>
     );
