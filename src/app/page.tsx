@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   Ticket,
   Film,
@@ -11,8 +11,6 @@ import {
   Play,
   Star,
   Users,
-  X,
-  Check,
   Clapperboard,
   Sparkle,
 } from "lucide-react";
@@ -116,13 +114,7 @@ function StatItem({
 
 export default function Home() {
   const [scrolled, setScrolled] = useState(false);
-  const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [authMode, setAuthMode] = useState<"login" | "signup">("login");
   const [particles, setParticles] = useState<Particle[]>([]);
-  const [formData, setFormData] = useState({ username: "", email: "", password: "" });
-  const [authError, setAuthError] = useState("");
-  const [authSuccess, setAuthSuccess] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [stats, setStats] = useState<Stats | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
 
@@ -159,42 +151,6 @@ export default function Home() {
       }))
     );
   }, []);
-
-  const handleAuthSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setAuthError("");
-    setAuthSuccess("");
-    setIsLoading(true);
-
-    const body = new FormData();
-    body.append("action", authMode);
-    if (authMode === "signup") body.append("username", formData.username);
-    body.append("email", formData.email);
-    body.append("password", formData.password);
-
-    try {
-      const res = await fetch("/api/auth", { method: "POST", body });
-      const data = await res.json();
-      if (data.success) {
-        setAuthSuccess(
-          authMode === "login"
-            ? "Welcome back! Redirecting..."
-            : "Account created! Redirecting..."
-        );
-        setTimeout(() => window.location.reload(), 1500);
-      } else {
-        setAuthError(data.error || "Authentication failed. Please try again.");
-      }
-    } catch {
-      setAuthError("Network error. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
 
   const genres = [
     { name: "ACTION", tag: "Adrenaline Rush", img: "/images/genre_action.png" },
@@ -282,20 +238,6 @@ export default function Home() {
             ))}
           </div>
 
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => { setAuthMode("login"); setAuthModalOpen(true); }}
-              className="px-5 py-2 text-sm font-semibold text-primary-text hover:text-white border border-transparent hover:border-border-light rounded-md transition-all duration-200 cursor-pointer"
-            >
-              Log In
-            </button>
-            <button
-              onClick={() => { setAuthMode("signup"); setAuthModalOpen(true); }}
-              className="px-5 py-2 text-sm font-bold text-white bg-primary-red hover:bg-red-700 rounded-md shadow-lg shadow-red-950/40 active:scale-95 transition-all duration-200 cursor-pointer"
-            >
-              Sign Up
-            </button>
-          </div>
         </div>
       </nav>
 
@@ -629,101 +571,6 @@ export default function Home() {
         </div>
       </footer>
 
-      {/* ── AUTH MODAL ── */}
-      <AnimatePresence>
-        {authModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setAuthModalOpen(false)}
-              className="absolute inset-0 bg-black/85 backdrop-blur-sm"
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 16 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 16 }}
-              transition={{ type: "spring", duration: 0.4 }}
-              className="relative w-full max-w-md p-8 rounded-xl glass-effect shadow-2xl z-10"
-            >
-              <button
-                onClick={() => setAuthModalOpen(false)}
-                className="absolute top-4 right-4 p-1.5 rounded-full text-secondary-text hover:text-white hover:bg-white/5 transition-all"
-              >
-                <X className="w-4 h-4" />
-              </button>
-
-              <h3 className="text-2xl font-bold font-playfair text-white mb-6 uppercase tracking-wide">
-                {authMode === "login" ? "Log In" : "Create Account"}
-              </h3>
-
-              <form onSubmit={handleAuthSubmit} className="space-y-5">
-                {authMode === "signup" && (
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-secondary-text uppercase tracking-wider font-inter">Username</label>
-                    <input
-                      type="text" name="username" required
-                      value={formData.username} onChange={handleInputChange}
-                      placeholder="e.g. cinemafan"
-                      className="w-full px-4 py-3 bg-surface-dark border border-border-light rounded-md text-white placeholder:text-zinc-600 focus:outline-none focus:border-gold-accent/60 transition-colors font-inter text-sm"
-                    />
-                  </div>
-                )}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-secondary-text uppercase tracking-wider font-inter">Email</label>
-                  <input
-                    type="email" name="email" required
-                    value={formData.email} onChange={handleInputChange}
-                    placeholder="name@example.com"
-                    className="w-full px-4 py-3 bg-surface-dark border border-border-light rounded-md text-white placeholder:text-zinc-600 focus:outline-none focus:border-gold-accent/60 transition-colors font-inter text-sm"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-secondary-text uppercase tracking-wider font-inter">Password</label>
-                  <input
-                    type="password" name="password" required
-                    value={formData.password} onChange={handleInputChange}
-                    placeholder="••••••••"
-                    className="w-full px-4 py-3 bg-surface-dark border border-border-light rounded-md text-white placeholder:text-zinc-600 focus:outline-none focus:border-gold-accent/60 transition-colors font-inter text-sm"
-                  />
-                </div>
-
-                {authError && (
-                  <div className="text-sm font-semibold text-primary-red bg-red-950/20 border border-red-900/30 rounded px-3 py-2 font-inter">
-                    {authError}
-                  </div>
-                )}
-                {authSuccess && (
-                  <div className="text-sm font-semibold text-green-400 bg-green-950/20 border border-green-900/30 rounded px-3 py-2 flex items-center gap-1.5 font-inter">
-                    <Check className="w-4 h-4" /> {authSuccess}
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full py-3 bg-primary-red hover:bg-red-700 text-white font-bold rounded-md transition-all shadow-lg active:scale-[0.98] disabled:opacity-50 font-inter text-sm"
-                >
-                  {isLoading ? "Please wait..." : authMode === "login" ? "Log In" : "Sign Up"}
-                </button>
-              </form>
-
-              <div className="mt-6 pt-5 border-t border-border-light text-sm text-center font-inter">
-                <span className="text-secondary-text">
-                  {authMode === "login" ? "Don't have an account?" : "Already have an account?"}
-                </span>{" "}
-                <button
-                  onClick={() => { setAuthMode(authMode === "login" ? "signup" : "login"); setAuthError(""); setAuthSuccess(""); }}
-                  className="text-primary-red hover:text-red-400 font-bold transition-colors cursor-pointer"
-                >
-                  {authMode === "login" ? "Sign Up" : "Log In"}
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
 
     </div>
   );

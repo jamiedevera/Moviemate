@@ -9,7 +9,6 @@
 - **Tinder for Movies:** Generates secure, anonymous session links to share with a partner.
 - **Cinematic UI/UX:** A premium, Netflix-inspired dark theme featuring glassmorphism elements, dynamic background slideshows, and smooth micro-animations.
 - **Lightning Fast Matching:** Uses highly optimized, parallelized API requests (`curl_multi`) to fetch movies and cross-reference recommendations in seconds.
-- **Secure Authentication System:** Fully implemented User Registration and Login system using modern security standards (Argon2 hashing) via a seamless glassmorphic modal.
 - **Enterprise-Grade Security:**
   - Strict **Content-Security-Policy (CSP)** and Anti-Clickjacking headers.
   - Built-in **IP Rate Limiting** to prevent API abuse.
